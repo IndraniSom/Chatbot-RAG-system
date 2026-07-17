@@ -1,0 +1,215 @@
+@import "highlight.js/styles/atom-one-dark.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #fafaf9;
+  --bg-elevated: #ffffff;
+  --text: #0a0a0b;
+  --text-muted: #6a6a72;
+  --border: rgba(10, 10, 11, 0.06);
+  --border-strong: rgba(10, 10, 11, 0.12);
+  --grain-opacity: 0.025;
+}
+
+.dark {
+  --bg: #0a0a0b;
+  --bg-elevated: #131316;
+  --text: #f5f5f7;
+  --text-muted: #8c8c95;
+  --border: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --grain-opacity: 0.04;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    font-family: "Inter Tight", system-ui, sans-serif;
+    font-feature-settings: "cv11", "ss01", "ss03";
+    background: var(--bg);
+    color: var(--text);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  ::selection {
+    background-color: rgba(61, 90, 254, 0.18);
+    color: var(--text);
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(10, 10, 11, 0.12);
+    border-radius: 999px;
+  }
+
+  .dark ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(10, 10, 11, 0.24);
+  }
+}
+
+@layer components {
+  /* Subtle grain overlay for premium texture */
+  .grain::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: var(--grain-opacity);
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='2' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' /%3E%3C/svg%3E");
+    mix-blend-mode: multiply;
+  }
+
+  .dark .grain::before {
+    mix-blend-mode: screen;
+  }
+
+  /* Marquee for suggestion cards */
+  .scroll-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scroll-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Markdown prose styles */
+  .prose-chat {
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--text);
+  }
+
+  .prose-chat p {
+    margin: 0;
+  }
+
+  .prose-chat p + p {
+    margin-top: 8px;
+  }
+
+  .prose-chat strong {
+    font-weight: 600;
+  }
+
+  .prose-chat ul,
+  .prose-chat ol {
+    margin: 6px 0;
+    padding-left: 18px;
+  }
+
+  .prose-chat ul {
+    list-style: disc;
+  }
+
+  .prose-chat ol {
+    list-style: decimal;
+  }
+
+  .prose-chat li {
+    margin: 2px 0;
+  }
+
+  .prose-chat li::marker {
+    color: var(--text-muted);
+  }
+
+  .prose-chat a {
+    color: #3d5afe;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-thickness: 1px;
+  }
+
+  .dark .prose-chat a {
+    color: #8c95ff;
+  }
+
+  .prose-chat code {
+    background: rgba(10, 10, 11, 0.06);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12.5px;
+  }
+
+  .dark .prose-chat code {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .prose-chat pre {
+    margin: 8px 0;
+    padding: 12px 14px;
+    background: #0a0a0b;
+    border-radius: 10px;
+    overflow-x: auto;
+    font-size: 12.5px;
+  }
+
+  .dark .prose-chat pre {
+    background: #1b1b1f;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .prose-chat pre code {
+    background: none;
+    padding: 0;
+    color: #e4e4e7;
+    font-size: inherit;
+  }
+
+  .prose-chat blockquote {
+    border-left: 2px solid var(--border-strong);
+    padding-left: 12px;
+    color: var(--text-muted);
+    font-style: italic;
+    margin: 6px 0;
+  }
+
+  .prose-chat table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 8px 0;
+    font-size: 13px;
+  }
+
+  .prose-chat th,
+  .prose-chat td {
+    border: 1px solid var(--border);
+    padding: 6px 10px;
+    text-align: left;
+  }
+
+  .prose-chat th {
+    background: rgba(10, 10, 11, 0.04);
+    font-weight: 600;
+  }
+
+  .dark .prose-chat th {
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  /* hide highlight.js background so we control it */
+  .hljs {
+    background: transparent !important;
+  }
+}
