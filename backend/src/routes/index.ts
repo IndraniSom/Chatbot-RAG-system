@@ -10,6 +10,9 @@ import qdrantRoutes from "./qdrant";
 import indexingRoutes from "./indexing";
 import retrievalRoutes from "./retrieval";
 import ragRoutes from "./rag";
+import authRoutes from "./auth";
+import websiteRoutes from "./website";
+import adminRoutes from "./admin";
 const router = Router();
 
 router.use("/chat", chatRoutes);
@@ -22,4 +25,7 @@ router.use("/test-qdrant", qdrantRoutes);
 router.use("/index-website", indexingRoutes);
 router.use("/test-retrieval", retrievalRoutes);
 router.use("/test-rag", ragRoutes);
+router.use("/auth", authRoutes);
+router.use("/websites", websiteRoutes);
+router.use("/admin", adminRoutes);
 export default router;

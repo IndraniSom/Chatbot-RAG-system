@@ -5,14 +5,22 @@ node_modules/
 **/node_modules/
 
 # ============================================================
-# Environment & secrets — never commit these
+# Environment & secrets — never commit real .env files.
+# .env.example templates ARE committed.
 # ============================================================
 .env
 .env.*
 !.env.example
-**/.env
-**/.env.*
-!**/.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+!frontend/.env.example
+widget/.env
+widget/.env.*
+!widget/.env.example
 
 # ============================================================
 # Build output
