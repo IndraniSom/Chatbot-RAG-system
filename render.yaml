@@ -1,0 +1,115 @@
+# Render Blueprint for Scrappy.
+#
+# This file describes BOTH services so they can be created in one shot
+# from the Render dashboard (New → Blueprint Instance → point at this repo).
+#
+# Secrets (MongoDB URI, NVIDIA key, etc.) must be set in the Render
+# dashboard's Environment tab — they aren't committed here.
+
+services:
+  # ──────────────────────────────────────────────────────────────────
+  # 1. Backend API — Express + MongoDB
+  # ──────────────────────────────────────────────────────────────────
+  - type: web
+    name: scrappy-backend
+    runtime: node
+    rootDir: backend
+    plan: starter
+    buildCommand: |
+      npm install --include=dev &&
+      npx playwright install chromium &&
+      npm run build
+    startCommand: node dist/server.js
+    healthCheckPath: /api/health
+    autoDeploy: true
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      # MongoDB Atlas connection string (set in dashboard)
+      - key: MONGODB_URI
+        sync: false
+
+      # JWT — generate a long random string
+      - key: JWT_SECRET
+        generateValue: true
+
+      # Upstash Redis
+      - key: REDIS_URL
+        sync: false
+
+      # Qdrant Cloud
+      - key: QDRANT_URL
+        sync: false
+      - key: QDRANT_API_KEY
+        sync: false
+      - key: QDRANT_COLLECTION
+        value: scrappy_knowledge
+
+      # NVIDIA NIM (embeddings + chat)
+      - key: NVIDIA_API_KEY
+        sync: false
+      - key: NVIDIA_EMBEDDING_MODEL
+        value: nvidia/llama-nemotron-embed-1b-v2
+      - key: NVIDIA_EMBEDDING_URL
+        value: https://integrate.api.nvidia.com/v1/embeddings
+      - key: NVIDIA_LLM_MODEL
+        value: nvidia/nemotron-3-ultra-550b-a55b
+      - key: NVIDIA_LLM_URL
+        value: https://integrate.api.nvidia.com/v1/chat/completions
+
+      # CORS — must include every frontend origin
+      # (render.yaml can't template the runtime CORS array; add origins
+      # in code at src/app.ts and they'll be picked up at startup)
+
+      # Widget delivery — assumes frontend (Next.js) is deployed separately
+      # and serves the built widget.js from /widget.js on its own origin.
+      # Replace with your real frontend URL after you deploy it.
+      - key: WIDGET_SCRIPT_URL
+        value: https://chatbot-rag-system.vercel.app/widget.js
+      - key: PUBLIC_API_URL
+        value: https://scrappy-backend.onrender.com
+
+  # ──────────────────────────────────────────────────────────────────
+  # 2. Background Worker — BullMQ consumer that runs indexing jobs
+  # ──────────────────────────────────────────────────────────────────
+  - type: worker
+    name: scrappy-worker
+    runtime: node
+    rootDir: backend
+    plan: starter
+    buildCommand: |
+      npm install --include=dev &&
+      npx playwright install chromium &&
+      npm run build
+    startCommand: node dist/worker/index.js
+    autoDeploy: true
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      - key: MONGODB_URI
+        sync: false
+
+      - key: REDIS_URL
+        sync: false
+
+      - key: QDRANT_URL
+        sync: false
+      - key: QDRANT_API_KEY
+        sync: false
+      - key: QDRANT_COLLECTION
+        value: scrappy_knowledge
+
+      - key: NVIDIA_API_KEY
+        sync: false
+      - key: NVIDIA_EMBEDDING_MODEL
+        value: nvidia/llama-nemotron-embed-1b-v2
+      - key: NVIDIA_EMBEDDING_URL
+        value: https://integrate.api.nvidia.com/v1/embeddings
+      - key: NVIDIA_LLM_MODEL
+        value: nvidia/nemotron-3-ultra-550b-a55b
+      - key: NVIDIA_LLM_URL
+        value: https://integrate.api.nvidia.com/v1/chat/completions

@@ -39,8 +39,7 @@ class InstallationService {
     const widgetScriptUrl =
       this.getWidgetScriptUrl();
 
-    const apiUrl = env.widget.publicApiUrl ?? "";
-
+    const apiUrl ="https://chatbot-rag-system.onrender.com";
     const apiAttr = apiUrl
       ? `\n  data-api-url="${apiUrl}"`
       : "";
