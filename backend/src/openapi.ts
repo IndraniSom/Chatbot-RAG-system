@@ -58,6 +58,21 @@ export const openapiSpec = {
       description:
         "BFS crawler that loads, extracts, and indexes pages into a local JSON database.",
     },
+    {
+      name: "Auth",
+      description:
+        "Customer authentication: register, login, and current-user lookup. JWT is returned on success and must be sent as `Authorization: Bearer <token>` on protected routes.",
+    },
+    {
+      name: "Websites",
+      description:
+        "Customer-facing website management: submit, list, fetch, delete, plus installation + indexing flows. All routes require authentication.",
+    },
+    {
+      name: "Admin",
+      description:
+        "Internal endpoints for Scrappy staff. Requires an authenticated user whose role is `ADMIN`.",
+    },
   ],
   paths: {
     "/health": {
@@ -77,37 +92,72 @@ export const openapiSpec = {
         },
       },
     },
-    "/chat": {
+
+    // ─────────────────────────────────────────────────────────────────
+    // Auth — public register/login, protected /me
+    // ─────────────────────────────────────────────────────────────────
+    "/auth/register": {
       post: {
-        tags: ["Chat"],
-        summary: "Send a message to the website's chatbot",
+        tags: ["Auth"],
+        summary: "Create a new customer account",
         description:
-          "Production chatbot endpoint. Runs the full RAG pipeline server-side: vector recall over the Qdrant knowledge base for the given `websiteId`, then a grounded answer from the configured NVIDIA chat model. Returns the answer plus the unique source URLs that backed it. Retrieval and generation parameters (limit, scoreThreshold, temperature, maxTokens) are tuned on the server — public callers can't override them.",
+          "Registers a new user, hashes the password with bcrypt, and returns a signed JWT plus the user profile. The token must be stored by the client and sent as `Authorization: Bearer <token>` on every subsequent request.",
         requestBody: {
           required: true,
           content: {
             "application/json": {
-              schema: { $ref: "#/components/schemas/ChatRequest" },
+              schema: { $ref: "#/components/schemas/RegisterRequest" },
               examples: {
-                greeting: {
-                  summary: "Greeting",
+                alex: {
+                  summary: "New customer",
                   value: {
-                    websiteId: "example_com",
-                    message: "Hello!",
+                    name: "Alex Johnson",
+                    email: "alex@example.com",
+                    password: "supersecret123",
                   },
                 },
-                pricing: {
-                  summary: "Pricing question",
+              },
+            },
+          },
+        },
+        responses: {
+          "201": {
+            description: "Account created",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/AuthResponse" },
+              },
+            },
+          },
+          "400": {
+            description:
+              "Validation error — name / email / password missing or email already taken",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/MessageErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/auth/login": {
+      post: {
+        tags: ["Auth"],
+        summary: "Sign in an existing user",
+        description:
+          "Verifies the email + password against MongoDB and returns a fresh JWT plus the user profile.",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/LoginRequest" },
+              examples: {
+                login: {
+                  summary: "Sign in",
                   value: {
-                    websiteId: "example_com",
-                    message: "What are your pricing plans?",
-                  },
-                },
-                refund: {
-                  summary: "Refund question",
-                  value: {
-                    websiteId: "example_com",
-                    message: "How do refunds work?",
+                    email: "alex@example.com",
+                    password: "supersecret123",
                   },
                 },
               },
@@ -116,16 +166,266 @@ export const openapiSpec = {
         },
         responses: {
           "200": {
-            description: "Assistant reply",
+            description: "Login successful",
             content: {
               "application/json": {
-                schema: { $ref: "#/components/schemas/ChatResponse" },
+                schema: { $ref: "#/components/schemas/AuthResponse" },
+              },
+            },
+          },
+          "401": {
+            description: "Invalid credentials",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/MessageErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/auth/me": {
+      get: {
+        tags: ["Auth"],
+        summary: "Get the currently-authenticated user",
+        description:
+          "Requires `Authorization: Bearer <token>`. Used by the frontend to validate a stored token and to hydrate the user profile after a page reload.",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": {
+            description: "Authenticated user",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["success", "data"],
+                  properties: {
+                    success: { type: "boolean", example: true },
+                    data: { $ref: "#/components/schemas/UserResponseData" },
+                  },
+                },
+              },
+            },
+          },
+          "401": {
+            description: "Missing or invalid JWT",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/MessageErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+
+    // ─────────────────────────────────────────────────────────────────
+    // Websites — customer-facing (all require JWT)
+    // ─────────────────────────────────────────────────────────────────
+    "/websites": {
+      post: {
+        tags: ["Websites"],
+        summary: "Submit a new website for approval",
+        description:
+          "Creates a PENDING website owned by the caller. The URL is normalized (http(s) prefix added if missing), the root domain is extracted, and the public `websiteId` (used in the widget snippet) is generated. Submits the same domain twice is rejected.",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/CreateWebsiteRequest" },
+              examples: {
+                example: {
+                  summary: "Submit Run For Safe Food",
+                  value: {
+                    name: "Run For Safe Food",
+                    url: "https://runforsafefood.org",
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "201": {
+            description: "Website submitted",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/WebsiteResponse" },
               },
             },
           },
           "400": {
-            description:
-              "Validation error — websiteId or message missing/empty",
+            description: "Validation error — name/url missing or invalid",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/MessageErrorResponse" },
+              },
+            },
+          },
+          "401": {
+            description: "Missing or invalid JWT",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/MessageErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+      get: {
+        tags: ["Websites"],
+        summary: "List the caller's websites",
+        description:
+          "Returns every website owned by the authenticated user, newest first.",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": {
+            description: "User's websites",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/WebsitesListResponse" },
+              },
+            },
+          },
+          "401": {
+            description: "Missing or invalid JWT",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/MessageErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/websites/{id}": {
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          description: "Mongo ObjectId of the website.",
+          schema: { type: "string" },
+          example: "6a5b4a5e122152ae65668c4a",
+        },
+      ],
+      get: {
+        tags: ["Websites"],
+        summary: "Get a single owned website",
+        description:
+          "Returns the website only if it belongs to the authenticated user (ownership is enforced server-side via `_id + userId`).",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": {
+            description: "Website found",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/WebsiteResponse" },
+              },
+            },
+          },
+          "400": {
+            description: "Invalid ObjectId",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/MessageErrorResponse" },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/Unauthorized" },
+          "404": { $ref: "#/components/responses/NotFound" },
+        },
+      },
+      delete: {
+        tags: ["Websites"],
+        summary: "Delete a website",
+        description:
+          "Allowed only while the website is `PENDING` or `REJECTED`. APPROVED websites must go through a cleanup flow before deletion because they have vectors in Qdrant.",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": { description: "Deleted" },
+          "400": { $ref: "#/components/responses/BadRequest" },
+          "401": { $ref: "#/components/responses/Unauthorized" },
+          "403": {
+            description: "Approved websites cannot be deleted directly",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/MessageErrorResponse" },
+              },
+            },
+          },
+          "404": { $ref: "#/components/responses/NotFound" },
+        },
+      },
+    },
+    "/websites/{id}/installation": {
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          description: "Mongo ObjectId of the website.",
+          schema: { type: "string" },
+        },
+      ],
+      get: {
+        tags: ["Websites"],
+        summary: "Get the install snippet",
+        description:
+          "Returns the `<script>` tag the customer should paste into their site, plus metadata. Only available once the website is APPROVED.",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": {
+            description: "Installation info",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/InstallationResponse" },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/Unauthorized" },
+          "404": { $ref: "#/components/responses/NotFound" },
+          "409": {
+            description: "Website isn't approved yet",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/MessageErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/websites/{id}/verify-installation": {
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          description: "Mongo ObjectId of the website.",
+          schema: { type: "string" },
+        },
+      ],
+      post: {
+        tags: ["Websites"],
+        summary: "Verify the widget is installed",
+        description:
+          "Launches headless Chromium, navigates to the customer's website, and looks for a `<script data-website-id=\"…\">` tag matching this website's public id. Updates `widgetStatus` to `INSTALLED` on success or `NOT_INSTALLED` on failure.",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": {
+            description: "Verification result",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/VerifyInstallationResponse" },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/Unauthorized" },
+          "404": { $ref: "#/components/responses/NotFound" },
+          "409": {
+            description: "Website isn't approved yet",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/MessageErrorResponse" },
@@ -133,10 +433,131 @@ export const openapiSpec = {
             },
           },
           "500": {
-            description: "Chatbot failed to generate a response",
+            description: "Browser / network error during verification",
             content: {
               "application/json": {
-                schema: { $ref: "#/components/schemas/QdrantErrorResponse" },
+                schema: { $ref: "#/components/schemas/MessageErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/websites/{id}/index": {
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          description: "Mongo ObjectId of the website.",
+          schema: { type: "string" },
+        },
+      ],
+      post: {
+        tags: ["Websites"],
+        summary: "Start an indexing job",
+        description:
+          "Enqueues a BullMQ job to crawl → clean → chunk → embed → upsert into Qdrant. Pre-flips `indexingStatus` to `INDEXING` so the UI gets instant feedback. Returns 202 with the jobId. The BullMQ worker (separate process) picks it up within seconds.",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: false,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/StartIndexingRequest" },
+              examples: {
+                default: {
+                  summary: "Default (max 20 pages)",
+                  value: { maxPages: 20 },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "202": {
+            description: "Job queued",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/StartIndexingResponse" },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/Unauthorized" },
+          "404": { $ref: "#/components/responses/NotFound" },
+          "409": {
+            description: "Website is not approved, or indexing already in progress",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/MessageErrorResponse" },
+              },
+            },
+          },
+          "500": { $ref: "#/components/responses/InternalError" },
+        },
+      },
+    },
+    "/websites/{id}/index-status": {
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          description: "Mongo ObjectId of the website.",
+          schema: { type: "string" },
+        },
+      ],
+      get: {
+        tags: ["Websites"],
+        summary: "Get current indexing status",
+        description:
+          "Returns the website's stored indexing state plus the active job's progress (0-100). The frontend polls this every 2 seconds while the job is `INDEXING`.",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": {
+            description: "Current indexing state",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/IndexStatusResponse" },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/Unauthorized" },
+          "404": { $ref: "#/components/responses/NotFound" },
+        },
+      },
+    },
+    "/websites/{id}/index-job": {
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          description: "Mongo ObjectId of the website.",
+          schema: { type: "string" },
+        },
+      ],
+      delete: {
+        tags: ["Websites"],
+        summary: "Cancel an in-progress indexing job",
+        description:
+          "Removes the active BullMQ job for this website. Returns 409 if the job already finished (completed or failed), 404 if no job exists.",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": { description: "Job cancelled" },
+          "401": { $ref: "#/components/responses/Unauthorized" },
+          "404": {
+            description: "Website not found, or no active job for it",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/MessageErrorResponse" },
+              },
+            },
+          },
+          "409": {
+            description: "Job is already completed or failed",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/MessageErrorResponse" },
               },
             },
           },
@@ -509,6 +930,233 @@ export const openapiSpec = {
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/BrowserErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/chat": {
+      post: {
+        tags: ["Chat"],
+        summary: "Send a message to the website's chatbot",
+        description:
+          "Production chatbot endpoint. Runs the full RAG pipeline server-side: vector recall over the Qdrant knowledge base for the given `websiteId`, then a grounded answer from the configured NVIDIA chat model. Returns the answer plus the unique source URLs that backed it. Retrieval and generation parameters (limit, scoreThreshold, temperature, maxTokens) are tuned on the server — public callers can't override them.",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/ChatRequest" },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Assistant reply",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ChatResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+
+    // ─────────────────────────────────────────────────────────────────
+    // Admin — staff-only (require admin JWT)
+    // ─────────────────────────────────────────────────────────────────
+    "/admin/websites/pending": {
+      get: {
+        tags: ["Admin"],
+        summary: "List websites awaiting approval",
+        description: "Returns every website with status PENDING, newest first.",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": {
+            description: "Pending submissions",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/AdminWebsitesListResponse",
+                },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/Unauthorized" },
+          "403": {
+            description: "Authenticated user is not an ADMIN",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/MessageErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/admin/websites": {
+      get: {
+        tags: ["Admin"],
+        summary: "List all websites across all customers",
+        description:
+          "Returns every website in the database (any status), newest first, with `userId` populated.",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": {
+            description: "All websites",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/AdminWebsitesListResponse",
+                },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/Unauthorized" },
+          "403": {
+            description: "Authenticated user is not an ADMIN",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/MessageErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/admin/websites/{id}/approve": {
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          description: "Mongo ObjectId of the website to approve.",
+          schema: { type: "string" },
+        },
+      ],
+      patch: {
+        tags: ["Admin"],
+        summary: "Approve a pending website",
+        description:
+          "Flips `status` to APPROVED, stamps `approvedAt` and `approvedBy`, and clears any previous rejection reason. The customer will then see the install snippet on their dashboard.",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": {
+            description: "Approved",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/WebsiteResponse" },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/Unauthorized" },
+          "403": {
+            description: "Authenticated user is not an ADMIN",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/MessageErrorResponse" },
+              },
+            },
+          },
+          "404": { $ref: "#/components/responses/NotFound" },
+          "409": {
+            description: "Website is not PENDING (already approved or rejected)",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/MessageErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/admin/websites/{id}/reject": {
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          description: "Mongo ObjectId of the website to reject.",
+          schema: { type: "string" },
+        },
+      ],
+      patch: {
+        tags: ["Admin"],
+        summary: "Reject a pending website",
+        description:
+          "Flips `status` to REJECTED, stores the supplied `reason` on the website so the customer can see it on their dashboard, and clears any approval metadata.",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/RejectWebsiteRequest" },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Rejected",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/WebsiteResponse" },
+              },
+            },
+          },
+          "400": {
+            description: "Missing or empty `reason`",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/MessageErrorResponse" },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/Unauthorized" },
+          "403": {
+            description: "Authenticated user is not an ADMIN",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/MessageErrorResponse" },
+              },
+            },
+          },
+          "404": { $ref: "#/components/responses/NotFound" },
+          "409": {
+            description: "Website is not PENDING",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/MessageErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/admin/users": {
+      get: {
+        tags: ["Admin"],
+        summary: "List all users",
+        description:
+          "Returns every registered user. Passwords are excluded server-side.",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": {
+            description: "All users",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/AdminUsersListResponse",
+                },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/Unauthorized" },
+          "403": {
+            description: "Authenticated user is not an ADMIN",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/MessageErrorResponse" },
               },
             },
           },
@@ -1428,6 +2076,396 @@ export const openapiSpec = {
           data: { $ref: "#/components/schemas/RAGData" },
         },
       },
+
+      // ─────────────────────────────────────────────────────────────
+      // Auth schemas
+      // ─────────────────────────────────────────────────────────────
+      RegisterRequest: {
+        type: "object",
+        required: ["name", "email", "password"],
+        properties: {
+          name: { type: "string", minLength: 1, example: "Alex Johnson" },
+          email: {
+            type: "string",
+            format: "email",
+            example: "alex@example.com",
+          },
+          password: {
+            type: "string",
+            minLength: 8,
+            description: "Hashed with bcrypt before storage.",
+            example: "supersecret123",
+          },
+        },
+      },
+      LoginRequest: {
+        type: "object",
+        required: ["email", "password"],
+        properties: {
+          email: { type: "string", format: "email" },
+          password: { type: "string", minLength: 1 },
+        },
+      },
+      AuthUser: {
+        type: "object",
+        required: ["id", "name", "email", "role", "status", "createdAt"],
+        properties: {
+          id: { type: "string", example: "65f0a1b2c3d4e5f6a7b8c9d0" },
+          name: { type: "string", example: "Alex Johnson" },
+          email: { type: "string", format: "email", example: "alex@example.com" },
+          role: { type: "string", enum: ["USER", "ADMIN"] },
+          status: { type: "string", enum: ["ACTIVE", "DISABLED"] },
+          createdAt: { type: "string", format: "date-time" },
+        },
+      },
+      AuthData: {
+        type: "object",
+        required: ["token", "user"],
+        properties: {
+          token: {
+            type: "string",
+            description:
+              "Signed JWT. Send as `Authorization: Bearer <token>` on protected routes.",
+          },
+          user: { $ref: "#/components/schemas/AuthUser" },
+        },
+      },
+      AuthResponse: {
+        type: "object",
+        required: ["success", "message", "data"],
+        properties: {
+          success: { type: "boolean", example: true },
+          message: {
+            type: "string",
+            example: "Account created successfully",
+          },
+          data: { $ref: "#/components/schemas/AuthData" },
+        },
+      },
+      UserResponseData: {
+        type: "object",
+        required: ["user"],
+        properties: {
+          user: { $ref: "#/components/schemas/AuthUser" },
+        },
+      },
+
+      // ─────────────────────────────────────────────────────────────
+      // Website schemas
+      // ─────────────────────────────────────────────────────────────
+      CreateWebsiteRequest: {
+        type: "object",
+        required: ["name", "url"],
+        properties: {
+          name: { type: "string", minLength: 1, example: "Run For Safe Food" },
+          url: {
+            type: "string",
+            format: "uri",
+            description:
+              "HTTP(S) URL. If the protocol is missing, https:// is assumed.",
+            example: "https://runforsafefood.org",
+          },
+        },
+      },
+      Website: {
+        type: "object",
+        required: [
+          "_id",
+          "websiteId",
+          "name",
+          "url",
+          "domain",
+          "status",
+          "widgetStatus",
+          "indexingStatus",
+          "isActive",
+          "createdAt",
+        ],
+        properties: {
+          _id: {
+            type: "string",
+            description:
+              "Mongo ObjectId. Use this for /api/websites/:id routes.",
+            example: "65f0a1b2c3d4e5f6a7b8c9d0",
+          },
+          websiteId: {
+            type: "string",
+            description:
+              "Public id used in the widget snippet (data-website-id).",
+            example: "ws_51322baf429e0ff0",
+          },
+          userId: {
+            oneOf: [
+              { type: "string" },
+              { $ref: "#/components/schemas/AuthUser" },
+            ],
+            description:
+              "String id on customer-facing routes; populated user object on admin routes.",
+          },
+          name: { type: "string" },
+          url: { type: "string", format: "uri" },
+          domain: { type: "string", example: "runforsafefood.org" },
+          allowedDomains: {
+            type: "array",
+            items: { type: "string" },
+          },
+          status: {
+            type: "string",
+            enum: ["PENDING", "APPROVED", "REJECTED"],
+          },
+          rejectionReason: { type: "string" },
+          widgetStatus: {
+            type: "string",
+            enum: ["NOT_INSTALLED", "INSTALLED"],
+          },
+          indexingStatus: {
+            type: "string",
+            enum: ["NOT_INDEXED", "INDEXING", "INDEXED", "FAILED"],
+          },
+          isActive: { type: "boolean" },
+          lastIndexedAt: { type: "string", format: "date-time", nullable: true },
+          lastIndexingError: { type: "string", nullable: true },
+          approvedAt: { type: "string", format: "date-time" },
+          createdAt: { type: "string", format: "date-time" },
+        },
+      },
+      WebsiteResponse: {
+        type: "object",
+        required: ["success", "data"],
+        properties: {
+          success: { type: "boolean", example: true },
+          data: { $ref: "#/components/schemas/Website" },
+        },
+      },
+      WebsitesListResponse: {
+        type: "object",
+        required: ["success", "data"],
+        properties: {
+          success: { type: "boolean", example: true },
+          data: {
+            type: "object",
+            required: ["count", "websites"],
+            properties: {
+              count: { type: "integer", example: 3 },
+              websites: {
+                type: "array",
+                items: { $ref: "#/components/schemas/Website" },
+              },
+            },
+          },
+        },
+      },
+      InstallationInfo: {
+        type: "object",
+        required: [
+          "websiteId",
+          "websiteName",
+          "url",
+          "domain",
+          "widgetStatus",
+          "script",
+        ],
+        properties: {
+          websiteId: { type: "string", example: "ws_51322baf429e0ff0" },
+          websiteName: { type: "string", example: "Run For Safe Food" },
+          url: { type: "string", format: "uri" },
+          domain: { type: "string", example: "runforsafefood.org" },
+          widgetStatus: {
+            type: "string",
+            enum: ["NOT_INSTALLED", "INSTALLED"],
+          },
+          script: {
+            type: "string",
+            description:
+              "HTML snippet the customer pastes into their website (before </body>).",
+            example: '<script src="..." data-website-id="..."></script>',
+          },
+        },
+      },
+      InstallationResponse: {
+        type: "object",
+        required: ["success", "data"],
+        properties: {
+          success: { type: "boolean", example: true },
+          data: { $ref: "#/components/schemas/InstallationInfo" },
+        },
+      },
+      VerifyInstallationResult: {
+        type: "object",
+        required: ["installed", "widgetStatus", "message"],
+        properties: {
+          installed: { type: "boolean", example: true },
+          widgetStatus: {
+            type: "string",
+            enum: ["NOT_INSTALLED", "INSTALLED"],
+          },
+          websiteId: { type: "string" },
+          message: {
+            type: "string",
+            example:
+              "Scrappy is successfully installed on your website.",
+          },
+        },
+      },
+      VerifyInstallationResponse: {
+        type: "object",
+        required: ["success", "message", "data"],
+        properties: {
+          success: { type: "boolean", example: true },
+          message: { type: "string" },
+          data: { $ref: "#/components/schemas/VerifyInstallationResult" },
+        },
+      },
+      StartIndexingRequest: {
+        type: "object",
+        properties: {
+          maxPages: {
+            type: "integer",
+            minimum: 1,
+            maximum: 100,
+            default: 20,
+            description: "Cap on pages to crawl before chunking/embedding.",
+          },
+        },
+      },
+      StartIndexingData: {
+        type: "object",
+        required: ["jobId", "status"],
+        properties: {
+          jobId: { type: "string" },
+          status: { type: "string", enum: ["INDEXING"] },
+        },
+      },
+      StartIndexingResponse: {
+        type: "object",
+        required: ["success", "message", "data"],
+        properties: {
+          success: { type: "boolean", example: true },
+          message: { type: "string" },
+          data: { $ref: "#/components/schemas/StartIndexingData" },
+        },
+      },
+      IndexStatusData: {
+        type: "object",
+        required: ["indexingStatus", "progress", "lastIndexedAt", "lastIndexingError"],
+        properties: {
+          indexingStatus: {
+            type: "string",
+            enum: ["NOT_INDEXED", "INDEXING", "INDEXED", "FAILED"],
+          },
+          progress: {
+            type: "integer",
+            minimum: 0,
+            maximum: 100,
+            description: "0-100. From the active BullMQ job's progress field.",
+          },
+          lastIndexedAt: { type: "string", format: "date-time", nullable: true },
+          lastIndexingError: { type: "string", nullable: true },
+        },
+      },
+      IndexStatusResponse: {
+        type: "object",
+        required: ["success", "data"],
+        properties: {
+          success: { type: "boolean", example: true },
+          data: { $ref: "#/components/schemas/IndexStatusData" },
+        },
+      },
+
+      // ─────────────────────────────────────────────────────────────
+      // Admin schemas
+      // ─────────────────────────────────────────────────────────────
+      AdminWebsitesListResponse: {
+        type: "object",
+        required: ["success", "data"],
+        properties: {
+          success: { type: "boolean", example: true },
+          data: {
+            type: "object",
+            required: ["count", "websites"],
+            properties: {
+              count: { type: "integer" },
+              websites: {
+                type: "array",
+                items: { $ref: "#/components/schemas/Website" },
+              },
+            },
+          },
+        },
+      },
+      AdminUsersListResponse: {
+        type: "object",
+        required: ["success", "data"],
+        properties: {
+          success: { type: "boolean", example: true },
+          data: {
+            type: "object",
+            required: ["count", "users"],
+            properties: {
+              count: { type: "integer" },
+              users: {
+                type: "array",
+                items: { $ref: "#/components/schemas/AuthUser" },
+              },
+            },
+          },
+        },
+      },
+      RejectWebsiteRequest: {
+        type: "object",
+        required: ["reason"],
+        properties: {
+          reason: {
+            type: "string",
+            minLength: 1,
+            description: "Shown to the customer on their dashboard.",
+            example: "Domain does not resolve. Please verify the URL.",
+          },
+        },
+      },
     },
-  },
+    responses: {
+      Unauthorized: {
+        description: "Missing or invalid JWT",
+        content: {
+          "application/json": {
+            schema: { $ref: "#/components/schemas/MessageErrorResponse" },
+          },
+        },
+      },
+      NotFound: {
+        description: "Resource not found",
+        content: {
+          "application/json": {
+            schema: { $ref: "#/components/schemas/MessageErrorResponse" },
+          },
+        },
+      },
+      BadRequest: {
+        description: "Validation error",
+        content: {
+          "application/json": {
+            schema: { $ref: "#/components/schemas/MessageErrorResponse" },
+          },
+        },
+      },
+      InternalError: {
+        description: "Server error",
+        content: {
+          "application/json": {
+            schema: { $ref: "#/components/schemas/MessageErrorResponse" },
+          },
+        },
+      },
+    },
+    securitySchemes: {
+      bearerAuth: {
+        type: "http",
+        scheme: "bearer",
+        bearerFormat: "JWT",
+        description:
+          "All /api/websites/* and /api/admin/* routes require `Authorization: Bearer <token>`. Get a token from POST /api/auth/login.",
+      },
+    },
+  }
 } as const;
