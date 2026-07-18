@@ -21,6 +21,7 @@ const ALLOWED_ORIGINS = [
   "http://localhost:3000",
   "https://chatbot-rag-system.vercel.app",
   "https://chatbot-widget-ruby-nu.vercel.app",
+  "https://billeif.com",
 
   /^https:\/\/chatbot-rag-system-git-[a-z0-9-]+\.vercel\.app$/,
   /^https:\/\/chatbot-widget-git-[a-z0-9-]+\.vercel\.app$/,
@@ -46,11 +47,22 @@ app.use(
       }
 
       try {
-        const hostname = new URL(origin).hostname;
+        const hostname = new URL(origin).hostname.toLowerCase();
+
+        // Root domain: `www.billeif.com` -> `billeif.com`.
+        // Websites store `domain` as the root (www stripped) and
+        // `allowedDomains` as both `[root, www.root]`, so match either the
+        // exact hostname (root or www) against allowedDomains, or the
+        // stripped root against domain.
+        const rootDomain = hostname.replace(/^www\./, "");
 
         const website = await Website.findOne({
-          domain: hostname,
           status: "APPROVED",
+          $or: [
+            { allowedDomains: hostname },
+            { allowedDomains: rootDomain },
+            { domain: rootDomain },
+          ],
         });
 
         if (website) {
