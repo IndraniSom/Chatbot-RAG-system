@@ -162,24 +162,19 @@ class InstallationService {
       /**
        * Open the approved website.
        */
-      await page.goto(
-        website.url,
-        {
-          waitUntil:
-            "domcontentloaded",
+      await page.goto(website.url, {
+  waitUntil: "networkidle",
+  timeout: 30000,
+});
 
-          timeout:
-            30000,
-        }
-      );
+await page.waitForLoadState("networkidle");
 
-      /**
-       * Give client-rendered websites
-       * a short time to load scripts.
-       */
-      await page.waitForTimeout(
-        1500
-      );
+await page.waitForSelector(
+  `script[data-website-id="${website.websiteId}"]`,
+  {
+    timeout: 10000,
+  }
+);
 
       /**
        * Find a script containing
