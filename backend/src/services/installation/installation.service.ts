@@ -172,6 +172,7 @@ await page.waitForLoadState("networkidle");
 await page.waitForSelector(
   `script[data-website-id="${website.websiteId}"]`,
   {
+    state: "attached",
     timeout: 10000,
   }
 );
