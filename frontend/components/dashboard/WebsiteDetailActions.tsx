@@ -1,65 +1,63 @@
 "use client";
 
 import { useState } from "react";
+import toast from "react-hot-toast";
+import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { ApiError, websitesApi } from "@/lib/api";
+import type { WidgetStatus } from "@/types";
+
+interface WebsiteDetailActionsProps {
+  websiteId: string;
+  widgetInstalled: boolean;
+  onWidgetStatusChange?: (s: WidgetStatus) => void;
+}
 
 /**
- * Client-side controls for the website detail page:
- *  - Verify Installation (mock — flips a local state).
- *  - Reindex Knowledge (mock — flips a local state).
+ * Verify-installation button. Calls POST /verify-installation and
+ * surfaces the result via toast + parent callback.
  */
 export function WebsiteDetailActions({
-  widgetInstalled: initialInstalled,
-  indexingStatus: initialStatus,
-}: {
-  widgetInstalled: boolean;
-  indexingStatus: "NOT_INDEXED" | "INDEXING" | "INDEXED" | "FAILED";
-}) {
-  const [installed, setInstalled] = useState(initialInstalled);
+  websiteId,
+  widgetInstalled,
+  onWidgetStatusChange,
+}: WebsiteDetailActionsProps) {
   const [verifying, setVerifying] = useState(false);
-  const [reindexing, setReindexing] = useState(false);
-  const [status, setStatus] = useState(initialStatus);
+  const [installed, setInstalled] = useState(widgetInstalled);
 
-  const verify = () => {
+  const onVerify = async () => {
     setVerifying(true);
-    window.setTimeout(() => {
-      setInstalled(true);
+    try {
+      const result = await websitesApi.verifyInstallation(websiteId);
+      setInstalled(result.installed);
+      onWidgetStatusChange?.(result.widgetStatus);
+      if (result.installed) {
+        toast.success(result.message);
+      } else {
+        toast.error(result.message);
+      }
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.serverMessage ?? err.message
+          : "Could not verify installation.";
+      toast.error(message);
+    } finally {
       setVerifying(false);
-    }, 900);
+    }
   };
 
-  const reindex = () => {
-    setStatus("INDEXING");
-    setReindexing(true);
-    window.setTimeout(() => {
-      setStatus("INDEXED");
-      setReindexing(false);
-    }, 1400);
-  };
+  if (installed) return null;
 
   return (
-    <div className="flex flex-wrap gap-2">
-      {!installed && (
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={verify}
-          loading={verifying}
-          leftIcon={!verifying ? <CheckCircle2 size={14} /> : undefined}
-        >
-          Verify Installation
-        </Button>
-      )}
-      <Button
-        variant="secondary"
-        size="sm"
-        onClick={reindex}
-        loading={reindexing}
-        leftIcon={!reindexing ? <Loader2 size={14} /> : undefined}
-      >
-        {status === "INDEXED" ? "Reindex Knowledge" : "Start Indexing"}
-      </Button>
-    </div>
+    <Button
+      variant="primary"
+      size="sm"
+      onClick={onVerify}
+      loading={verifying}
+      leftIcon={!verifying ? <CheckCircle2 size={14} /> : undefined}
+    >
+      Verify Installation
+    </Button>
   );
 }

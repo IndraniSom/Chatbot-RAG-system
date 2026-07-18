@@ -1,6 +1,7 @@
 import { QdrantClient } from "@qdrant/js-client-rest";
-
+import env from "../../config/env";
 import { EmbeddedChunk } from "../embedding/embedding.service";
+
 export interface QdrantSearchResult {
   id: string | number;
   score: number;
@@ -18,17 +19,17 @@ class QdrantService {
   private readonly client: QdrantClient;
 
   private readonly collectionName: string;
-
+  
   constructor() {
     const url =
-      process.env.QDRANT_URL ||
+      env.qdrant.url ||
       "http://localhost:6333";
 
     const apiKey =
-      process.env.QDRANT_API_KEY;
+      env.qdrant.apiKey;
 
     this.collectionName =
-      process.env.QDRANT_COLLECTION ||
+      env.qdrant.collection ||
       "scrappy_knowledge";
 
     /**
@@ -468,6 +469,30 @@ async ensureWebsiteIdIndex(): Promise<void> {
 
     throw error;
   }
+}
+async deleteWebsiteVectors(
+  websiteId: string
+) {
+  const COLLECTION_NAME = process.env.QDRANT_COLLECTION!;
+  await this.client.delete(
+    COLLECTION_NAME,
+    {
+      filter: {
+        must: [
+          {
+            key: "websiteId",
+            match: {
+              value: websiteId,
+            },
+          },
+        ],
+      },
+    }
+  );
+
+  console.log(
+    `🗑 Deleted vectors for ${websiteId}`
+  );
 }
 
 }

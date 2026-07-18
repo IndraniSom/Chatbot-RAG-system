@@ -1,6 +1,6 @@
 import { AccountStatusBadge } from "@/components/ui/Badge";
 import { formatDate } from "@/lib/format";
-import type { User } from "@/types/user";
+import { getUserStatus, type User } from "@/types";
 
 interface UserTableProps {
   users: User[];
@@ -22,6 +22,16 @@ export function UserTable({ users, websiteCounts }: UserTableProps) {
           </tr>
         </thead>
         <tbody className="divide-y divide-ink-100 text-[13px]">
+          {users.length === 0 && (
+            <tr>
+              <td
+                colSpan={5}
+                className="px-4 py-10 text-center text-ink-500"
+              >
+                No users yet.
+              </td>
+            </tr>
+          )}
           {users.map((u) => (
             <tr key={u.id} className="hover:bg-ink-50/40">
               <td className="whitespace-nowrap px-4 py-3">
@@ -43,10 +53,10 @@ export function UserTable({ users, websiteCounts }: UserTableProps) {
                 {websiteCounts[u.id] ?? 0}
               </td>
               <td className="whitespace-nowrap px-4 py-3">
-                <AccountStatusBadge status={u.status} />
+                <AccountStatusBadge status={getUserStatus(u)} />
               </td>
               <td className="whitespace-nowrap px-4 py-3 text-ink-500">
-                {formatDate(u.joinedAt)}
+                {formatDate(u.createdAt)}
               </td>
             </tr>
           ))}

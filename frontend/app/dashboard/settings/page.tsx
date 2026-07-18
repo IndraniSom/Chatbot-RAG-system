@@ -1,15 +1,19 @@
+"use client";
+
 import { Header } from "@/components/layout/Header";
 import { Card } from "@/components/ui/Card";
-import { currentUser } from "@/lib/mock-data";
+import { useAuth } from "@/hooks/useAuth";
 import { formatDate } from "@/lib/format";
+import { LoadingState } from "@/components/ui/Feedback";
 
 export default function SettingsPage() {
+  const { user } = useAuth();
+
   return (
     <>
       <Header
         title="Settings"
         description="Manage your account preferences."
-        user={currentUser}
       />
       <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
         <Card>
@@ -17,12 +21,18 @@ export default function SettingsPage() {
           <p className="mt-1 text-[13px] text-ink-500">
             Your account details.
           </p>
-          <dl className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Name" value={currentUser.name} />
-            <Field label="Email" value={currentUser.email} />
-            <Field label="Role" value={currentUser.role} />
-            <Field label="Joined" value={formatDate(currentUser.joinedAt)} />
-          </dl>
+          {user ? (
+            <dl className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field label="Name" value={user.name} />
+              <Field label="Email" value={user.email} />
+              <Field label="Role" value={user.role} />
+              <Field label="Joined" value={formatDate(user.createdAt)} />
+            </dl>
+          ) : (
+            <div className="mt-5">
+              <LoadingState />
+            </div>
+          )}
         </Card>
       </div>
     </>

@@ -1,47 +1,77 @@
 "use client";
 
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { ExternalLink, X, Check } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import type { User } from "@/types/user";
-import type { Website } from "@/types/website";
+import type { Website } from "@/types";
+import { ApiError, adminApi } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 
 interface WebsiteApprovalCardProps {
   website: Website;
-  owner: User | undefined;
+  /** Notified when approve / reject succeeds so the parent can refetch. */
+  onResolved?: (next: Website) => void;
+  onRemove?: (id: string) => void;
 }
 
 export function WebsiteApprovalCard({
   website,
-  owner,
+  onResolved,
+  onRemove,
 }: WebsiteApprovalCardProps) {
   const [approveOpen, setApproveOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [reason, setReason] = useState("");
-  const [resolved, setResolved] = useState<"APPROVED" | "REJECTED" | null>(
-    null
-  );
+  const [busy, setBusy] = useState(false);
 
-  if (resolved) {
-    return (
-      <Card className="flex items-center justify-between gap-3">
-        <p className="text-[13px] text-ink-500">
-          <span className="font-medium text-ink-900">{website.name}</span> has
-          been {resolved === "APPROVED" ? "approved" : "rejected"}.
-        </p>
-        <button
-          type="button"
-          onClick={() => setResolved(null)}
-          className="text-[12px] font-medium text-ink-500 hover:text-ink-900"
-        >
-          Undo
-        </button>
-      </Card>
-    );
-  }
+  // Pull owner name/email from the populated userId (admin endpoints).
+  const owner =
+    typeof website.userId === "string" ? null : website.userId;
+
+  const onApprove = async () => {
+    setBusy(true);
+    try {
+      const { website: updated } = await adminApi.approveWebsite(website.id);
+      toast.success(`${updated.name} approved.`);
+      setApproveOpen(false);
+      onResolved?.(updated);
+      onRemove?.(website.id);
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.serverMessage ?? err.message
+          : "Could not approve website.";
+      toast.error(message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onReject = async () => {
+    if (!reason.trim()) return;
+    setBusy(true);
+    try {
+      const { website: updated } = await adminApi.rejectWebsite(
+        website.id,
+        reason.trim()
+      );
+      toast.success(`${updated.name} rejected.`);
+      setRejectOpen(false);
+      onResolved?.(updated);
+      onRemove?.(website.id);
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.serverMessage ?? err.message
+          : "Could not reject website.";
+      toast.error(message);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <>
@@ -110,7 +140,7 @@ export function WebsiteApprovalCard({
       {/* Approve confirmation */}
       <Modal
         open={approveOpen}
-        onClose={() => setApproveOpen(false)}
+        onClose={() => !busy && setApproveOpen(false)}
         title="Approve website"
         description={`Approve ${website.name} and let the customer install Scrappy?`}
         size="sm"
@@ -119,15 +149,11 @@ export function WebsiteApprovalCard({
             <Button
               variant="ghost"
               onClick={() => setApproveOpen(false)}
+              disabled={busy}
             >
               Cancel
             </Button>
-            <Button
-              onClick={() => {
-                setApproveOpen(false);
-                setResolved("APPROVED");
-              }}
-            >
+            <Button onClick={onApprove} loading={busy}>
               Approve Website
             </Button>
           </>
@@ -146,7 +172,7 @@ export function WebsiteApprovalCard({
       {/* Reject with reason */}
       <Modal
         open={rejectOpen}
-        onClose={() => setRejectOpen(false)}
+        onClose={() => !busy && setRejectOpen(false)}
         title="Reject website"
         description="The customer will see this reason on their dashboard."
         size="md"
@@ -155,16 +181,15 @@ export function WebsiteApprovalCard({
             <Button
               variant="ghost"
               onClick={() => setRejectOpen(false)}
+              disabled={busy}
             >
               Cancel
             </Button>
             <Button
               variant="danger"
-              onClick={() => {
-                setRejectOpen(false);
-                setResolved("REJECTED");
-              }}
-              disabled={!reason.trim()}
+              onClick={onReject}
+              disabled={!reason.trim() || busy}
+              loading={busy}
             >
               Reject Website
             </Button>

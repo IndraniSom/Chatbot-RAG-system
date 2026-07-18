@@ -6,6 +6,8 @@ import {
 
 import jwt from "jsonwebtoken";
 
+import env from "../config/env";
+
 export interface AuthenticatedRequest
   extends Request {
   user?: {
@@ -67,7 +69,7 @@ export const authenticateUser =
       }
 
       const secret =
-        process.env.JWT_SECRET;
+        env.jwt.secret;
 
       if (!secret) {
         throw new Error(

@@ -1,6 +1,6 @@
 import { DashboardShell } from "@/components/layout/DashboardShell";
+import { RequireAuth } from "@/components/auth/RequireAuth";
 import { adminNav } from "@/components/layout/Sidebar";
-import { currentAdmin } from "@/lib/mock-data";
 
 export default function AdminDashboardLayout({
   children,
@@ -8,8 +8,10 @@ export default function AdminDashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <DashboardShell user={currentAdmin} items={adminNav}>
-      {children}
-    </DashboardShell>
+    <RequireAuth>
+      <DashboardShell items={adminNav}>
+        {children}
+      </DashboardShell>
+    </RequireAuth>
   );
 }

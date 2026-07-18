@@ -3,7 +3,6 @@ import { ArrowLeft, Send, ShieldCheck, Code2, type LucideIcon } from "lucide-rea
 import { Header } from "@/components/layout/Header";
 import { Card } from "@/components/ui/Card";
 import { AddWebsiteForm } from "@/components/dashboard/AddWebsiteForm";
-import { currentUser } from "@/lib/mock-data";
 
 export default function AddWebsitePage() {
   return (
@@ -11,7 +10,6 @@ export default function AddWebsitePage() {
       <Header
         title="Add a new website"
         description="Submit your website for approval before installing Scrappy."
-        user={currentUser}
       />
       <div className="mx-auto w-full max-w-2xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
         <Link

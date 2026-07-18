@@ -1,5 +1,6 @@
 import { chromium } from "playwright";
 
+import env from "../../config/env";
 import Website from "../../models/website";
 
 class InstallationService {
@@ -8,7 +9,7 @@ class InstallationService {
    */
   private getWidgetScriptUrl(): string {
     const widgetScriptUrl =
-      process.env.WIDGET_SCRIPT_URL;
+      env.widget.scriptUrl;
 
     if (!widgetScriptUrl) {
       throw new Error(

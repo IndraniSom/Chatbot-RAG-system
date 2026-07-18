@@ -57,6 +57,7 @@ export interface IWebsite
   createdAt: Date;
 
   updatedAt: Date;
+  lastIndexingError?: string;
 }
 
 const websiteSchema =
@@ -206,6 +207,10 @@ const websiteSchema =
       lastIndexedAt: {
         type: Date,
       },
+      lastIndexingError: {
+  type: String,
+  trim: true,
+},
     },
     {
       timestamps: true,

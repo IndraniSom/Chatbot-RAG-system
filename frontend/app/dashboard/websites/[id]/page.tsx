@@ -1,11 +1,16 @@
-import { notFound } from "next/navigation";
+"use client";
+
 import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import {
   ArrowLeft,
   Globe,
   AlertCircle,
   Clock,
   CheckCircle2,
+  Trash2,
 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { Card } from "@/components/ui/Card";
@@ -14,29 +19,177 @@ import {
   IndexingStatusBadge,
   WidgetStatusBadge,
 } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { ScriptCodeBlock } from "@/components/dashboard/ScriptCodeBlock";
 import { WebsiteDetailActions } from "@/components/dashboard/WebsiteDetailActions";
-import { currentUser, getWebsiteById } from "@/lib/mock-data";
+import { IndexStatusPanel } from "@/components/dashboard/IndexStatusPanel";
+import { ErrorState, LoadingState } from "@/components/ui/Feedback";
+import { ApiError, websitesApi } from "@/lib/api";
+import type {
+  Website,
+  WidgetStatus,
+  IndexingStatus,
+} from "@/types";
 import { formatDateTime } from "@/lib/format";
 
-interface PageProps {
-  params: { id: string };
+export default function WebsiteDetailPage() {
+  const params = useParams<{ id: string }>();
+  const router = useRouter();
+  const id = params?.id ?? "";
+
+  const [website, setWebsite] = useState<Website | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchWebsite = useCallback(async () => {
+    if (!id) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const { website } = await websitesApi.get(id);
+      setWebsite(website);
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.serverMessage ?? err.message
+          : "Could not load website.";
+      // 404 → notFound(); everything else → inline error.
+      if (err instanceof ApiError && err.status === 404) {
+        router.replace("/dashboard/websites");
+        return;
+      }
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  }, [id, router]);
+
+  useEffect(() => {
+    void fetchWebsite();
+  }, [fetchWebsite]);
+
+  const onDelete = async () => {
+    if (!website) return;
+    if (website.status === "APPROVED") {
+      toast.error("Approved websites cannot be deleted.");
+      return;
+    }
+    if (!window.confirm("Delete this website? This cannot be undone.")) {
+      return;
+    }
+    try {
+      await websitesApi.delete(website.id);
+      toast.success("Website deleted.");
+      router.push("/dashboard/websites");
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.serverMessage ?? err.message
+          : "Could not delete website.";
+      toast.error(message);
+    }
+  };
+
+  if (loading) {
+    return (
+      <>
+        <Header title="Loading…" />
+        <LoadingState label="Loading website…" />
+      </>
+    );
+  }
+
+  if (error) {
+    return (
+      <>
+        <Header title="Website" />
+        <div className="mx-auto w-full max-w-4xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+          <ErrorState message={error} onRetry={fetchWebsite} />
+        </div>
+      </>
+    );
+  }
+
+  if (!website) return null;
+
+  return (
+    <WebsiteDetailBody
+      website={website}
+      onLocalUpdate={(updater) =>
+        setWebsite((prev) => (prev ? updater(prev) : prev))
+      }
+      onDelete={onDelete}
+    />
+  );
 }
 
-export default function WebsiteDetailPage({ params }: PageProps) {
-  const website = getWebsiteById(params.id);
-  if (!website) notFound();
-  // Soft access guard: in real life, check ownership here.
-  if (website.userId !== currentUser.id) notFound();
+function WebsiteDetailBody({
+  website,
+  onLocalUpdate,
+  onDelete,
+}: {
+  website: Website;
+  onLocalUpdate: (updater: (prev: Website) => Website) => void;
+  onDelete: () => void;
+}) {
+  const [installation, setInstallation] = useState<{
+    script: string;
+    widgetStatus: WidgetStatus;
+  } | null>(null);
+  const [installationError, setInstallationError] = useState<string | null>(
+    null
+  );
 
-  const script = `<script\n  src="https://widget.scrappy.ai/widget.js"\n  data-website-id="${website.websiteId}"\n></script>`;
+  // Fetch installation script when approved.
+  useEffect(() => {
+    if (website.status !== "APPROVED") return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { installation } = await websitesApi.getInstallation(website.id);
+        if (!cancelled) {
+          setInstallation({
+            script: installation.script,
+            widgetStatus: installation.widgetStatus,
+          });
+        }
+      } catch (err) {
+        if (cancelled) return;
+        const message =
+          err instanceof ApiError
+            ? err.serverMessage ?? err.message
+            : "Could not load installation script.";
+        setInstallationError(message);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [website.id, website.status]);
+
+  const onIndexingChange = (s: IndexingStatus) =>
+    onLocalUpdate((prev) => ({ ...prev, indexingStatus: s }));
+
+  const onWidgetStatusChange = (s: WidgetStatus) =>
+    onLocalUpdate((prev) => ({ ...prev, widgetStatus: s }));
 
   return (
     <>
       <Header
         title={website.name}
         description={website.url}
-        user={currentUser}
+        actions={
+          website.status !== "APPROVED" ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onDelete}
+              leftIcon={<Trash2 size={14} />}
+            >
+              Delete
+            </Button>
+          ) : null
+        }
       />
       <div className="mx-auto w-full max-w-4xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
         <Link
@@ -100,16 +253,16 @@ export default function WebsiteDetailPage({ params }: PageProps) {
           <StatusTile
             label="Knowledge Indexing"
             icon={<Clock size={14} />}
-            value={<IndexingStatusBadge status={website.indexingStatus} />}
-            caption={
-              website.indexingStatus === "INDEXED"
-                ? "Your chatbot is ready to answer"
-                : website.indexingStatus === "INDEXING"
-                ? "Indexing in progress"
-                : website.indexingStatus === "FAILED"
-                ? "Reindex to try again"
-                : "Index after installing the widget"
+            value={
+              <IndexStatusPanel
+                websiteId={website.id}
+                websiteStatus={website.status}
+                initialStatus={website.indexingStatus}
+                initialLastIndexedAt={website.lastIndexedAt ?? null}
+                onIndexingChange={onIndexingChange}
+              />
             }
+            caption={null}
           />
         </div>
 
@@ -166,14 +319,24 @@ export default function WebsiteDetailPage({ params }: PageProps) {
               </p>
             </div>
             <div className="mt-4">
-              <ScriptCodeBlock code={script} />
+              {installation ? (
+                <ScriptCodeBlock code={installation.script} />
+              ) : installationError ? (
+                <p className="text-[12.5px] text-red-600">{installationError}</p>
+              ) : (
+                <LoadingState label="Loading script…" />
+              )}
             </div>
-            <div className="mt-5">
-              <WebsiteDetailActions
-                widgetInstalled={website.widgetStatus === "INSTALLED"}
-                indexingStatus={website.indexingStatus}
-              />
-            </div>
+
+            {installation && (
+              <div className="mt-5">
+                <WebsiteDetailActions
+                  websiteId={website.id}
+                  widgetInstalled={installation.widgetStatus === "INSTALLED"}
+                  onWidgetStatusChange={onWidgetStatusChange}
+                />
+              </div>
+            )}
 
             {website.widgetStatus === "INSTALLED" && (
               <div className="mt-5 flex items-start gap-2.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5">
@@ -203,7 +366,7 @@ function StatusTile({
   label: string;
   icon: React.ReactNode;
   value: React.ReactNode;
-  caption: string;
+  caption: string | null;
 }) {
   return (
     <Card>
@@ -214,7 +377,7 @@ function StatusTile({
         </p>
       </div>
       <div className="mt-3">{value}</div>
-      <p className="mt-2 text-[12px] text-ink-500">{caption}</p>
+      {caption && <p className="mt-2 text-[12px] text-ink-500">{caption}</p>}
     </Card>
   );
 }

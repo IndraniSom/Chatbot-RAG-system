@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { WebsiteTable } from "@/components/admin/WebsiteTable";
 import { FilterTabs } from "@/components/admin/FilterTabs";
-import type { User } from "@/types/user";
-import type { Website, ApprovalStatus } from "@/types/website";
+import type { Website, ApprovalStatus } from "@/types";
 
 type Filter = "all" | "pending" | "approved" | "rejected";
 
@@ -17,10 +16,9 @@ const filterToStatus: Record<Filter, ApprovalStatus | null> = {
 
 interface Props {
   websites: Website[];
-  users: User[];
 }
 
-export function WebsitesAdminClient({ websites, users }: Props) {
+export function WebsitesAdminClient({ websites }: Props) {
   const [filter, setFilter] = useState<Filter>("all");
 
   const counts: Record<Filter, number> = {
@@ -48,7 +46,7 @@ export function WebsitesAdminClient({ websites, users }: Props) {
         initial="all"
         onChange={setFilter}
       />
-      <WebsiteTable websites={visible} users={users} />
+      <WebsiteTable websites={visible} />
     </div>
   );
 }

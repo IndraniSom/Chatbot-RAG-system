@@ -1,7 +1,4 @@
-/**
- * One source of website knowledge
- * retrieved from Qdrant.
- */
+import env from "../../config/env";
 export interface LLMContextSource {
   content: string;
 
@@ -70,14 +67,14 @@ class LLMService {
 
   constructor() {
     this.apiKey =
-      process.env.NVIDIA_API_KEY || "";
+      env.nvidia.apiKey || "";
 
     this.apiUrl =
-      process.env.NVIDIA_LLM_URL ||
+      env.nvidia.llm.url ||
       "https://integrate.api.nvidia.com/v1/chat/completions";
 
     this.model =
-      process.env.NVIDIA_LLM_MODEL ||
+      env.nvidia.llm.model ||
       "nvidia/nemotron-3-ultra-550b-a55b";
 
     if (!this.apiKey) {

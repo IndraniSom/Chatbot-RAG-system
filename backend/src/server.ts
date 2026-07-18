@@ -2,44 +2,50 @@ import "dotenv/config";
 
 import app from "./app";
 
-import {
-  connectDatabase,
-} from "./config/database";
+import env from "./config/env";
+import { connectDatabase } from "./config/database";
+import { connectRedis, disconnectRedis } from "./config/redis";
 
-const PORT =
-  process.env.PORT || 5000;
+const PORT = env.app.port;
 
-const startServer =
-  async () => {
-    /**
-     * Connect to MongoDB first.
-     */
-    await connectDatabase();
+let server: ReturnType<typeof app.listen>;
 
-    /**
-     * Only start Express after
-     * database connection succeeds.
-     */
-    app.listen(
-      PORT,
-      () => {
-        console.log(
-          "================================="
-        );
+async function bootstrap() {
+    try {
+        console.log("🚀 Starting Scrappy Backend...");
 
-        console.log(
-          "🚀 Scrappy AI Backend Started"
-        );
+        await connectDatabase();
 
-        console.log(
-          `🌐 Server running on http://localhost:${PORT}`
-        );
+        await connectRedis();
 
-        console.log(
-          "================================="
-        );
-      }
-    );
-  };
+        server = app.listen(PORT, () => {
+            console.log("=================================");
+            console.log("🚀 Scrappy AI Backend Started");
+            console.log(`🌐 Server running on http://localhost:${PORT}`);
+            console.log("=================================");
+        });
 
-startServer();
+    } catch (error) {
+        console.error("❌ Failed to start server");
+        console.error(error);
+
+        process.exit(1);
+    }
+}
+
+async function shutdown(signal: string) {
+    console.log(`${signal} received`);
+
+    if (server) {
+        server.close();
+    }
+
+    await disconnectRedis();
+
+    process.exit(0);
+}
+
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+
+bootstrap();

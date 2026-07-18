@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState } from "react";
 import { Sidebar, type NavItem } from "./Sidebar";
-import type { User } from "@/types/user";
+import { useAuth } from "@/hooks/useAuth";
 
 interface DashboardShellContextValue {
   openSidebar: () => void;
@@ -15,7 +15,6 @@ const DashboardShellContext = createContext<DashboardShellContextValue>({
 export const useDashboardShell = () => useContext(DashboardShellContext);
 
 interface DashboardShellProps {
-  user: User;
   items: NavItem[];
   secondaryItems?: NavItem[];
   children: React.ReactNode;
@@ -27,14 +26,21 @@ interface DashboardShellProps {
  *  - Desktop (lg+): permanent left sidebar.
  *  - Mobile/Tablet: sidebar is hidden, accessible via header hamburger
  *    (call `useDashboardShell().openSidebar()` from the page header).
+ *  - Reads the authenticated user from the auth context so we never pass
+ *    stale mock data down.
  */
 export function DashboardShell({
-  user,
   items,
   secondaryItems,
   children,
 }: DashboardShellProps) {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
+
+  // While the user is hydrating, render nothing in the sidebar slot rather
+  // than crashing on `user.name`. RequireAuth upstream already gates the
+  // whole tree, so user should always be defined here in practice.
+  if (!user) return null;
 
   return (
     <DashboardShellContext.Provider value={{ openSidebar: () => setOpen(true) }}>

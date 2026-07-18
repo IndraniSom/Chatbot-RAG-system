@@ -1,6 +1,6 @@
 import { DashboardShell } from "@/components/layout/DashboardShell";
+import { RequireAuth } from "@/components/auth/RequireAuth";
 import { customerNav } from "@/components/layout/Sidebar";
-import { currentUser } from "@/lib/mock-data";
 
 export default function CustomerDashboardLayout({
   children,
@@ -8,8 +8,10 @@ export default function CustomerDashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <DashboardShell user={currentUser} items={customerNav}>
-      {children}
-    </DashboardShell>
+    <RequireAuth>
+      <DashboardShell items={customerNav}>
+        {children}
+      </DashboardShell>
+    </RequireAuth>
   );
 }

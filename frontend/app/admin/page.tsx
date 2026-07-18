@@ -1,20 +1,47 @@
+"use client";
+
 import { Users, Globe, Clock, Bot } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { WebsiteApprovalCard } from "@/components/admin/WebsiteApprovalCard";
-import { currentAdmin, users, websites } from "@/lib/mock-data";
+import { ErrorState, LoadingState } from "@/components/ui/Feedback";
+import { useAsync } from "@/hooks/useAsync";
+import { adminApi } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
+import type { Website } from "@/types";
 
 export default function AdminOverviewPage() {
-  const pending = websites.filter((w) => w.status === "PENDING");
-  const active = websites.filter((w) => w.widgetStatus === "INSTALLED");
-  const usersById = new Map(users.map((u) => [u.id, u]));
+  const { user } = useAuth();
+  const {
+    data: websitesData,
+    loading,
+    error,
+    refetch,
+    setData,
+  } = useAsync(() => adminApi.getPendingWebsites(), []);
 
+  const pending = websitesData?.websites ?? [];
+
+  const removeFromList = (id: string) => {
+    setData(
+      websitesData
+        ? {
+            ...websitesData,
+            websites: websitesData.websites.filter((w) => w.id !== id),
+            count: websitesData.count - 1,
+          }
+        : websitesData
+    );
+  };
+
+  // We don't have global counts on this page — show pending count and a
+  // hint about refreshing for the full picture. (Could parallel-fetch
+  // getAllWebsites + getAllUsers if needed; out of scope here.)
   return (
     <>
       <Header
         title="Scrappy Admin"
-        description="Approve websites and manage customers."
-        user={currentAdmin}
+        description={`Welcome back, ${user?.name.split(" ")[0] ?? "Admin"}.`}
       />
       <div className="mx-auto w-full max-w-6xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
         {/* Stats */}
@@ -22,22 +49,14 @@ export default function AdminOverviewPage() {
           className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
           aria-label="Admin summary"
         >
-          <StatCard label="Total Users" value={users.length} icon={Users} />
-          <StatCard
-            label="Total Websites"
-            value={websites.length}
-            icon={Globe}
-          />
           <StatCard
             label="Pending Approvals"
             value={pending.length}
             icon={Clock}
           />
-          <StatCard
-            label="Active Chatbots"
-            value={active.length}
-            icon={Bot}
-          />
+          <StatCard label="This Page" value="Pending" icon={Globe} />
+          <StatCard label="Active Chatbots" value="—" icon={Bot} />
+          <StatCard label="Total Users" value="—" icon={Users} />
         </section>
 
         {/* Pending approvals */}
@@ -55,17 +74,21 @@ export default function AdminOverviewPage() {
             </div>
           </div>
 
-          {pending.length === 0 ? (
+          {error && <ErrorState message={error} onRetry={refetch} />}
+
+          {loading ? (
+            <LoadingState label="Loading pending websites…" />
+          ) : pending.length === 0 ? (
             <div className="rounded-xl border border-dashed border-ink-200 bg-white px-6 py-12 text-center text-[13px] text-ink-500">
               Nothing to review right now.
             </div>
           ) : (
             <div className="space-y-3">
-              {pending.map((w) => (
+              {pending.map((w: Website) => (
                 <WebsiteApprovalCard
                   key={w.id}
                   website={w}
-                  owner={usersById.get(w.userId)}
+                  onRemove={removeFromList}
                 />
               ))}
             </div>

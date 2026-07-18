@@ -11,7 +11,8 @@ import {
   coerceIdParam,
   isNotFoundError,
 } from "../utils/request";
-
+import indexingQueue from "../queues/indexing.queue";
+import { JOBS } from "../queues/constant";
 /**
  * HTTP boundary for /api/websites.
  *
@@ -366,7 +367,253 @@ class WebsiteController {
       });
     }
   }
+  async indexWebsite(
+  req: AuthenticatedRequest,
+  res: Response
+) {
+  try {
+    const userId =
+      req.user?.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message:
+          "Authentication required",
+      });
+    }
+
+    const id =
+      coerceIdParam(
+        req.params.id
+      );
+
+    if (
+      !id ||
+      !isValidObjectId(id)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Invalid website ID",
+      });
+    }
+
+    const website =
+      await websiteService.getOwnedWebsite(
+        id,
+        userId
+      );
+      if (website.indexingStatus === "INDEXING") {
+  return res.status(409).json({
+    success: false,
+    message: "Website indexing is already in progress.",
+  });
 }
+if (website.status !== "APPROVED") {
+  return res.status(409).json({
+    success: false,
+    message: "Website must be approved before indexing.",
+  });
+}
+    const { maxPages = 20 } = req.body;
+
+const job = await indexingQueue.add(
+  JOBS.INDEX_WEBSITE,
+  {
+    websiteId: website.websiteId,
+    maxPages,
+  },
+  {
+    jobId: `index:${website.websiteId}`,
+  }
+);
+
+    return res.status(202).json({
+      success: true,
+      message:
+        "Website indexing has started.",
+      data: {
+        jobId: job.id,
+        status:
+          "INDEXING",
+      },
+    });
+  } catch (error) {
+    if (
+      isNotFoundError(
+        error
+      )
+    ) {
+      return res.status(404).json({
+        success: false,
+        message:
+          "Website not found",
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Failed to queue indexing",
+    });
+  }
+}
+async getIndexStatus(
+  req: AuthenticatedRequest,
+  res: Response
+) {
+  try {
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
+
+    const id = coerceIdParam(req.params.id);
+
+    if (!id || !isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid website ID",
+      });
+    }
+
+    const website =
+      await websiteService.getIndexStatus(
+        id,
+        userId
+      );
+
+    const job = await indexingQueue.getJob(
+      `index:${website.websiteId}`
+    );
+
+    const progress =
+      typeof job?.progress === "number"
+        ? job.progress
+        : 100;
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        indexingStatus:
+          website.indexingStatus,
+
+        progress,
+
+        lastIndexedAt:
+          website.lastIndexedAt,
+
+        lastIndexingError:
+          website.lastIndexingError,
+      },
+    });
+  } catch (error) {
+    if (isNotFoundError(error)) {
+      return res.status(404).json({
+        success: false,
+        message: "Website not found",
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch indexing status",
+    });
+  }
+}
+  /**
+   * DELETE /api/websites/:id/cancel-index
+   *
+   * Cancel an in-progress indexing job. Requires the user to own the
+   * website; returns 404 if the website or its queue job doesn't exist,
+   * 409 if the job is already completed / failed.
+   */
+
+  async cancelIndexJob(
+    req: AuthenticatedRequest,
+    res: Response
+  ) {
+    try {
+      const userId = req.user?.userId;
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: "Authentication required",
+        });
+      }
+
+      const id = coerceIdParam(req.params.id);
+      if (!id || !isValidObjectId(id)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid website ID",
+        });
+      }
+
+      const website = await websiteService.cancelIndexJob(id, userId);
+
+      const job = await indexingQueue.getJob(
+        `index:${website.websiteId}`
+      );
+
+      if (!job) {
+        return res.status(404).json({
+          success: false,
+          message: "No indexing job found.",
+        });
+      }
+
+      const state = await job.getState();
+
+      if (state === "completed" || state === "failed") {
+        return res.status(409).json({
+          success: false,
+          message: `Job is already ${state}.`,
+        });
+      }
+      if (state === "active") {
+  return res.status(409).json({
+    success: false,
+    message: "Cannot cancel a running indexing job.",
+  });
+}
+      await job.remove();
+
+      return res.status(200).json({
+        success: true,
+        message: "Indexing job cancelled successfully.",
+      });
+    } catch (error) {
+      if (isNotFoundError(error)) {
+        return res.status(404).json({
+          success: false,
+          message: "Website not found",
+        });
+      }
+
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to cancel indexing job";
+
+      return res.status(500).json({
+        success: false,
+        message,
+      });
+    }
+  }
+} 
 
 /**
  * Service throws this when a user tries to delete an already-approved

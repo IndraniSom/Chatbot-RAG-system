@@ -3,6 +3,7 @@ import jwt, {
   SignOptions,
 } from "jsonwebtoken";
 
+import env from "../../config/env";
 import User from "../../models/user";
 
 export interface RegisterInput {
@@ -25,7 +26,7 @@ class AuthService {
     role: string
   ): string {
     const secret =
-      process.env.JWT_SECRET;
+      env.jwt.secret;
 
     if (!secret) {
       throw new Error(
@@ -34,7 +35,7 @@ class AuthService {
     }
 
     const expiresIn =
-      (process.env.JWT_EXPIRES_IN ||
+      (env.jwt.expiresIn ||
         "7d") as SignOptions["expiresIn"];
 
     return jwt.sign(

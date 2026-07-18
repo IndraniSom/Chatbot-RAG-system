@@ -107,5 +107,23 @@ router.post(
         res
       )
 );
+router.post(
+  "/:id/index",
+  authenticateUser,
+  websiteController.indexWebsite
+);
+router.get(
 
+"/:id/index-status",
+
+authenticateUser,
+
+websiteController.getIndexStatus
+
+);
+router.delete(
+  "/:id/index-job",
+  authenticateUser,
+  websiteController.cancelIndexJob
+);
 export default router;

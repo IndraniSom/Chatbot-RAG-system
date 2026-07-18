@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AppProviders } from "@/components/AppProviders";
 
 export const metadata: Metadata = {
   title: "Scrappy — Turn your website into an AI-powered conversation",
@@ -22,7 +23,9 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-screen bg-white">{children}</body>
+      <body className="min-h-screen bg-white">
+        <AppProviders>{children}</AppProviders>
+      </body>
     </html>
   );
 }

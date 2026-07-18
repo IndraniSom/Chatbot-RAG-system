@@ -2,12 +2,16 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { Mail, Lock, User, ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { useAuth } from "@/hooks/useAuth";
+import { ApiError } from "@/lib/api";
 
 export function SignupForm() {
   const router = useRouter();
+  const { register } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,7 +24,7 @@ export function SignupForm() {
     confirm?: string;
   }>({});
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const next: typeof errors = {};
     if (!name.trim()) next.name = "Please enter your name.";
@@ -32,7 +36,21 @@ export function SignupForm() {
     if (Object.keys(next).length) return;
 
     setLoading(true);
-    window.setTimeout(() => router.push("/dashboard"), 400);
+    try {
+      await register(name, email, password);
+      toast.success("Welcome to Scrappy!");
+      router.replace("/dashboard");
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.serverMessage ?? err.message
+          : "Could not create your account. Please try again.";
+      // Surface server-side errors on the most relevant field when possible.
+      setErrors({ email: message });
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

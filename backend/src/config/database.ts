@@ -1,10 +1,10 @@
 import mongoose from "mongoose";
-
+import  env from "./env";
 export const connectDatabase =
   async (): Promise<void> => {
     try {
       const mongoURI =
-        process.env.MONGODB_URI;
+        env.mongodb.uri;
 
       if (!mongoURI) {
         throw new Error(

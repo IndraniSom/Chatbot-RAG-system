@@ -1,5 +1,5 @@
 import { DocumentChunk } from "../chunking/chunker.service";
-
+import env from "../../config/env";
 export interface EmbeddedChunk {
   id: string;
   content: string;
@@ -44,14 +44,14 @@ class EmbeddingService {
 
   constructor() {
     this.apiKey =
-      process.env.NVIDIA_API_KEY || "";
+      env.nvidia.apiKey || "";
 
     this.apiUrl =
-      process.env.NVIDIA_EMBEDDING_URL ||
+      env.nvidia.embedding.url ||
       "https://integrate.api.nvidia.com/v1/embeddings";
 
     this.model =
-      process.env.NVIDIA_EMBEDDING_MODEL ||
+      env.nvidia.embedding.model ||
       "nvidia/llama-nemotron-embed-1b-v2";
 
     if (!this.apiKey) {

@@ -1,22 +1,41 @@
+"use client";
+
 import Link from "next/link";
 import { Globe, Bot, Clock, Plus, MessageSquare } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { WebsiteCard } from "@/components/dashboard/WebsiteCard";
 import { Button } from "@/components/ui/Button";
-import { currentUser, getUserWebsites } from "@/lib/mock-data";
+import {
+  EmptyState,
+  ErrorState,
+  LoadingState,
+} from "@/components/ui/Feedback";
+import { useAuth } from "@/hooks/useAuth";
+import { useAsync } from "@/hooks/useAsync";
+import { websitesApi } from "@/lib/api";
+import type { Website } from "@/types";
 
 export default function DashboardOverviewPage() {
-  const websites = getUserWebsites(currentUser.id);
-  const active = websites.filter((w) => w.widgetStatus === "INSTALLED").length;
+  const { user } = useAuth();
+  const { data, loading, error, refetch } = useAsync(
+    () => websitesApi.list(),
+    []
+  );
+
+  const websites: Website[] = data?.websites ?? [];
+
+  const active = websites.filter(
+    (w) => w.status === "APPROVED" && w.widgetStatus === "INSTALLED"
+  ).length;
   const pending = websites.filter((w) => w.status === "PENDING").length;
+  const indexed = websites.filter((w) => w.indexingStatus === "INDEXED").length;
 
   return (
     <>
       <Header
         title="Overview"
         description="Manage your websites and AI chatbots."
-        user={currentUser}
         actions={
           <Link href="/dashboard/websites/new">
             <Button leftIcon={<Plus size={15} strokeWidth={2.4} />}>
@@ -29,12 +48,14 @@ export default function DashboardOverviewPage() {
         {/* Greeting */}
         <div>
           <h2 className="text-[20px] font-semibold tracking-tight text-ink-900">
-            Welcome back, {currentUser.name.split(" ")[0]}
+            Welcome back, {user?.name.split(" ")[0] ?? "there"}
           </h2>
           <p className="mt-1 text-[13.5px] text-ink-500">
             Manage your websites and AI chatbots.
           </p>
         </div>
+
+        {error && <ErrorState message={error} onRetry={refetch} />}
 
         {/* Stats */}
         <section
@@ -50,7 +71,13 @@ export default function DashboardOverviewPage() {
             label="Active Chatbots"
             value={active}
             icon={Bot}
-            caption="Across all websites"
+            caption="Approved + widget installed"
+          />
+          <StatCard
+            label="Indexed"
+            value={indexed}
+            icon={Clock}
+            caption="Ready to answer questions"
           />
           <StatCard
             label="Pending Approval"
@@ -81,11 +108,13 @@ export default function DashboardOverviewPage() {
             </Link>
           </div>
 
-          {websites.length === 0 ? (
+          {loading ? (
+            <LoadingState label="Loading your websites…" />
+          ) : websites.length === 0 ? (
             <EmptyWebsites />
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {websites.map((w) => (
+              {websites.slice(0, 6).map((w) => (
                 <WebsiteCard key={w.id} website={w} />
               ))}
             </div>
@@ -98,20 +127,17 @@ export default function DashboardOverviewPage() {
 
 function EmptyWebsites() {
   return (
-    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-ink-200 bg-white px-6 py-16 text-center">
-      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-ink-50 text-ink-700">
-        <MessageSquare size={18} strokeWidth={2} />
-      </div>
-      <h4 className="text-[14px] font-semibold text-ink-900">No websites yet</h4>
-      <p className="mt-1 max-w-sm text-[13px] text-ink-500">
-        Submit your first website to get a Scrappy chatbot up and running in
-        minutes.
-      </p>
-      <Link href="/dashboard/websites/new" className="mt-4">
-        <Button leftIcon={<Plus size={15} strokeWidth={2.4} />}>
-          Add Website
-        </Button>
-      </Link>
-    </div>
+    <EmptyState
+      icon={<MessageSquare size={18} strokeWidth={2} />}
+      title="No websites yet"
+      description="Submit your first website to get a Scrappy chatbot up and running in minutes."
+      action={
+        <Link href="/dashboard/websites/new">
+          <Button leftIcon={<Plus size={15} strokeWidth={2.4} />}>
+            Add Website
+          </Button>
+        </Link>
+      }
+    />
   );
 }

@@ -2,9 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { ArrowRight, Globe, Type } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { ApiError, websitesApi } from "@/lib/api";
 
 export function AddWebsiteForm() {
   const router = useRouter();
@@ -13,9 +15,14 @@ export function AddWebsiteForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (!name.trim()) {
+      setError("Please enter a website name.");
+      return;
+    }
     try {
       const parsed = new URL(url.startsWith("http") ? url : `https://${url}`);
       if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
@@ -26,13 +33,22 @@ export function AddWebsiteForm() {
       setError("Please enter a valid URL.");
       return;
     }
-    if (!name.trim()) {
-      setError("Please enter a website name.");
-      return;
-    }
+
     setLoading(true);
-    // Mock submission: route back to /dashboard/websites
-    window.setTimeout(() => router.push("/dashboard/websites"), 400);
+    try {
+      await websitesApi.create({ name: name.trim(), url: url.trim() });
+      toast.success("Website submitted! Waiting for admin approval.");
+      router.push("/dashboard/websites");
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.serverMessage ?? err.message
+          : "Could not submit website. Please try again.";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

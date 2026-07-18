@@ -6,21 +6,29 @@ import {
   WidgetStatusBadge,
 } from "@/components/ui/Badge";
 import { formatDate } from "@/lib/format";
-import type { User } from "@/types/user";
-import type { Website } from "@/types/website";
+import {
+  getWebsiteOwnerEmail,
+  getWebsiteOwnerName,
+  type Website,
+} from "@/types";
 
 interface WebsiteTableProps {
+  /** Pass users from /admin/users for fallback when userId isn't populated. */
   websites: Website[];
-  users: User[];
+  websitesByOwner?: Record<string, number>;
+}
+
+function isPopulated(
+  userId: Website["userId"]
+): userId is { _id: string; name: string; email: string } {
+  return typeof userId !== "string";
 }
 
 /**
  * Responsive table — horizontally scrollable on small screens. Used by the
  * /admin/websites page.
  */
-export function WebsiteTable({ websites, users }: WebsiteTableProps) {
-  const userById = new Map(users.map((u) => [u.id, u]));
-
+export function WebsiteTable({ websites }: WebsiteTableProps) {
   return (
     <div className="overflow-x-auto rounded-xl border border-ink-200 bg-white">
       <table className="min-w-full divide-y divide-ink-100 text-left">
@@ -48,16 +56,21 @@ export function WebsiteTable({ websites, users }: WebsiteTableProps) {
             </tr>
           )}
           {websites.map((w) => {
-            const owner = userById.get(w.userId);
+            const ownerName = isPopulated(w.userId)
+              ? w.userId.name
+              : getWebsiteOwnerName(w.userId);
+            const ownerEmail = isPopulated(w.userId)
+              ? w.userId.email
+              : getWebsiteOwnerEmail(w.userId);
             return (
               <tr key={w.id} className="hover:bg-ink-50/40">
                 <Td>
                   <p className="font-medium text-ink-900">{w.name}</p>
                 </Td>
                 <Td>
-                  <div className="text-ink-700">{owner?.name ?? "—"}</div>
+                  <div className="text-ink-700">{ownerName ?? "—"}</div>
                   <div className="text-[11.5px] text-ink-500">
-                    {owner?.email ?? "—"}
+                    {ownerEmail ?? "—"}
                   </div>
                 </Td>
                 <Td>
@@ -82,12 +95,14 @@ export function WebsiteTable({ websites, users }: WebsiteTableProps) {
                 </Td>
                 <Td className="text-ink-500">{formatDate(w.createdAt)}</Td>
                 <Td className="text-right">
-                  <Link
-                    href={`/admin/websites?id=${w.id}`}
+                  <a
+                    href={w.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-[12.5px] font-medium text-ink-700 hover:text-ink-900"
                   >
                     Review
-                  </Link>
+                  </a>
                 </Td>
               </tr>
             );
