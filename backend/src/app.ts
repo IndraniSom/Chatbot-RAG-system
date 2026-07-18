@@ -4,7 +4,7 @@ import { apiReference } from "@scalar/express-api-reference";
 
 import routes from "./routes";
 import { openapiSpec } from "./openapi";
-
+import Website from "./models/website";
 const app = express();
 
 /**
@@ -21,26 +21,51 @@ const ALLOWED_ORIGINS = [
   "http://localhost:3000",
   "https://chatbot-rag-system.vercel.app",
   "https://chatbot-widget-ruby-nu.vercel.app",
-  // Vercel preview deployments (branch previews, PR previews, etc.)
+
   /^https:\/\/chatbot-rag-system-git-[a-z0-9-]+\.vercel\.app$/,
   /^https:\/\/chatbot-widget-git-[a-z0-9-]+\.vercel\.app$/,
 ];
 
 app.use(
   cors({
-    origin: (origin, cb) => {
-      // Allow same-origin / curl / server-to-server (no Origin header)
-      if (!origin) return cb(null, true);
-      if (
-        ALLOWED_ORIGINS.some((o) =>
-          o instanceof RegExp ? o.test(origin) : o === origin
-        )
-      ) {
-        return cb(null, true);
+    origin: async (origin, callback) => {
+      // Server-to-server requests
+      if (!origin) {
+        return callback(null, true);
       }
-      return cb(new Error(`CORS: origin ${origin} not allowed`));
+
+      // Existing allow list
+      const isAllowedOrigin = ALLOWED_ORIGINS.some((allowed) =>
+        allowed instanceof RegExp
+          ? allowed.test(origin)
+          : allowed === origin
+      );
+
+      if (isAllowedOrigin) {
+        return callback(null, true);
+      }
+
+      try {
+        const hostname = new URL(origin).hostname;
+
+        const website = await Website.findOne({
+          domain: hostname,
+          status: "APPROVED",
+        });
+
+        if (website) {
+          return callback(null, true);
+        }
+
+        return callback(
+          new Error(`CORS: origin ${origin} not allowed`)
+        );
+      } catch {
+        return callback(new Error("Invalid origin"));
+      }
     },
-    credentials: true,
+
+    credentials: false,
   })
 );
 
