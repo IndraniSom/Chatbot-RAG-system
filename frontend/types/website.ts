@@ -32,8 +32,15 @@ export interface PopulatedUserRef {
 }
 
 export interface Website {
-  /** Mongo _id, used for /api/websites/:id routes */
-  id: string;
+  /**
+   * Mongo `_id`, used for /api/websites/:id routes. The backend returns it
+   * as `_id` (it's an ObjectId in Mongo, serialized as a string by JSON).
+   * Use `getWebsiteId(website)` rather than reading `.id` directly because
+   * the wire format doesn't actually include a literal `id` field.
+   */
+  _id: string;
+  /** Convenience alias — many UI components pass `website.id` around. */
+  id?: string;
   /** Public id used in the widget snippet (ws_abc123) */
   websiteId: string;
   /**
@@ -54,6 +61,15 @@ export interface Website {
   approvedBy?: string | PopulatedUserRef;
   lastIndexedAt?: string | null;
   lastIndexingError?: string | null;
+}
+
+/**
+ * The Mongo ObjectId serialized to a string. Always use this when you need
+ * the value to put into a URL like `/api/websites/:id/...` — the backend's
+ * route param `:id` is the document's `_id`.
+ */
+export function getWebsiteId(website: Website): string {
+  return website._id ?? website.id ?? "";
 }
 
 /**

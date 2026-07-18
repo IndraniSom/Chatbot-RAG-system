@@ -11,7 +11,9 @@ import {
   coerceIdParam,
   isNotFoundError,
 } from "../utils/request";
-import indexingQueue from "../queues/indexing.queue";
+import indexingQueue, {
+  type IndexWebsiteJobData,
+} from "../queues/indexing.queue";
 import { JOBS } from "../queues/constant";
 /**
  * HTTP boundary for /api/websites.
@@ -418,6 +420,13 @@ if (website.status !== "APPROVED") {
 }
     const { maxPages = 20 } = req.body;
 
+// Pre-flip indexingStatus to INDEXING so the UI gets instant feedback,
+// and the row reflects "this website is queued / processing" even if the
+// worker hasn't picked the job up yet.
+website.indexingStatus = "INDEXING";
+website.lastIndexingError = undefined;
+await website.save();
+
 const job = await indexingQueue.add(
   JOBS.INDEX_WEBSITE,
   {
@@ -425,7 +434,10 @@ const job = await indexingQueue.add(
     maxPages,
   },
   {
-    jobId: `index:${website.websiteId}`,
+    // BullMQ reserves `:` as a job-id separator. Include a timestamp so
+    // re-clicking "Start indexing" enqueues a fresh job instead of being
+    // silently deduped against a previous failed one.
+    jobId: `index-${website.websiteId}-${Date.now()}`,
   }
 );
 
@@ -490,8 +502,18 @@ async getIndexStatus(
         userId
       );
 
-    const job = await indexingQueue.getJob(
-      `index:${website.websiteId}`
+    // Job IDs include a timestamp so re-clicks create new jobs. Look up the
+    // active job by data.websiteId (BullMQ supports filtering by job data
+    // when listing active jobs).
+    const active = await indexingQueue.getJobs([
+      "active",
+      "waiting",
+      "delayed",
+    ]);
+    const job = active.find(
+      (j) =>
+        (j.data as Partial<IndexWebsiteJobData>).websiteId ===
+        website.websiteId
     );
 
     const progress =
@@ -563,8 +585,15 @@ async getIndexStatus(
 
       const website = await websiteService.cancelIndexJob(id, userId);
 
-      const job = await indexingQueue.getJob(
-        `index:${website.websiteId}`
+      // Job IDs are timestamped; locate the active job for this website
+      // by data.websiteId rather than reconstructing the id.
+      const active = await indexingQueue.getJobs([
+        "active",
+        "waiting",
+        "delayed",
+      ]);
+      const job = active.find(
+        (j) => (j.data as Partial<IndexWebsiteJobData>).websiteId === website.websiteId
       );
 
       if (!job) {

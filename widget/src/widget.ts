@@ -22,8 +22,13 @@
   const websiteId =
     script.dataset.websiteId;
 
+  // The dashboard's install script sets `data-api-url` to wherever the
+  // /api/chat backend lives. Fall back to same-origin (works when the
+  // widget is served from the same host as the API) → and finally
+  // localhost:5000 for local dev.
   const apiUrl =
     script.dataset.apiUrl ||
+    (typeof window !== "undefined" ? window.location.origin : "") ||
     "http://localhost:5000";
 
   if (!websiteId) {

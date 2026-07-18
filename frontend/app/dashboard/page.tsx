@@ -14,7 +14,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useAsync } from "@/hooks/useAsync";
 import { websitesApi } from "@/lib/api";
-import type { Website } from "@/types";
+import { getWebsiteId, type Website } from "@/types";
 
 export default function DashboardOverviewPage() {
   const { user } = useAuth();
@@ -115,7 +115,7 @@ export default function DashboardOverviewPage() {
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               {websites.slice(0, 6).map((w) => (
-                <WebsiteCard key={w.id} website={w} />
+                <WebsiteCard key={getWebsiteId(w)} website={w} />
               ))}
             </div>
           )}

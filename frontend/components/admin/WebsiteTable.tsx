@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/Badge";
 import { formatDate } from "@/lib/format";
 import {
+  getWebsiteId,
   getWebsiteOwnerEmail,
   getWebsiteOwnerName,
   type Website,
@@ -63,7 +64,7 @@ export function WebsiteTable({ websites }: WebsiteTableProps) {
               ? w.userId.email
               : getWebsiteOwnerEmail(w.userId);
             return (
-              <tr key={w.id} className="hover:bg-ink-50/40">
+              <tr key={getWebsiteId(w)} className="hover:bg-ink-50/40">
                 <Td>
                   <p className="font-medium text-ink-900">{w.name}</p>
                 </Td>

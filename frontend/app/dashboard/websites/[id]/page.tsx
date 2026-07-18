@@ -25,11 +25,7 @@ import { WebsiteDetailActions } from "@/components/dashboard/WebsiteDetailAction
 import { IndexStatusPanel } from "@/components/dashboard/IndexStatusPanel";
 import { ErrorState, LoadingState } from "@/components/ui/Feedback";
 import { ApiError, websitesApi } from "@/lib/api";
-import type {
-  Website,
-  WidgetStatus,
-  IndexingStatus,
-} from "@/types";
+import { getWebsiteId, type Website, type WidgetStatus, type IndexingStatus } from "@/types";
 import { formatDateTime } from "@/lib/format";
 
 export default function WebsiteDetailPage() {
@@ -78,7 +74,7 @@ export default function WebsiteDetailPage() {
       return;
     }
     try {
-      await websitesApi.delete(website.id);
+      await websitesApi.delete(getWebsiteId(website));
       toast.success("Website deleted.");
       router.push("/dashboard/websites");
     } catch (err) {
@@ -146,7 +142,7 @@ function WebsiteDetailBody({
     let cancelled = false;
     (async () => {
       try {
-        const { installation } = await websitesApi.getInstallation(website.id);
+        const { installation } = await websitesApi.getInstallation(getWebsiteId(website));
         if (!cancelled) {
           setInstallation({
             script: installation.script,
@@ -165,7 +161,7 @@ function WebsiteDetailBody({
     return () => {
       cancelled = true;
     };
-  }, [website.id, website.status]);
+  }, [getWebsiteId(website), website.status]);
 
   const onIndexingChange = (s: IndexingStatus) =>
     onLocalUpdate((prev) => ({ ...prev, indexingStatus: s }));
@@ -255,7 +251,7 @@ function WebsiteDetailBody({
             icon={<Clock size={14} />}
             value={
               <IndexStatusPanel
-                websiteId={website.id}
+                websiteId={getWebsiteId(website)}
                 websiteStatus={website.status}
                 initialStatus={website.indexingStatus}
                 initialLastIndexedAt={website.lastIndexedAt ?? null}
@@ -331,7 +327,7 @@ function WebsiteDetailBody({
             {installation && (
               <div className="mt-5">
                 <WebsiteDetailActions
-                  websiteId={website.id}
+                  websiteId={getWebsiteId(website)}
                   widgetInstalled={installation.widgetStatus === "INSTALLED"}
                   onWidgetStatusChange={onWidgetStatusChange}
                 />

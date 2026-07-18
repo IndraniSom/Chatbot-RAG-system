@@ -6,7 +6,7 @@ import { ExternalLink, X, Check } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import type { Website } from "@/types";
+import { getWebsiteId, type Website } from "@/types";
 import { ApiError, adminApi } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 
@@ -31,14 +31,16 @@ export function WebsiteApprovalCard({
   const owner =
     typeof website.userId === "string" ? null : website.userId;
 
+  const id = getWebsiteId(website);
+
   const onApprove = async () => {
     setBusy(true);
     try {
-      const { website: updated } = await adminApi.approveWebsite(website.id);
+      const { website: updated } = await adminApi.approveWebsite(id);
       toast.success(`${updated.name} approved.`);
       setApproveOpen(false);
       onResolved?.(updated);
-      onRemove?.(website.id);
+      onRemove?.(id);
     } catch (err) {
       const message =
         err instanceof ApiError
@@ -55,13 +57,13 @@ export function WebsiteApprovalCard({
     setBusy(true);
     try {
       const { website: updated } = await adminApi.rejectWebsite(
-        website.id,
+        id,
         reason.trim()
       );
       toast.success(`${updated.name} rejected.`);
       setRejectOpen(false);
       onResolved?.(updated);
-      onRemove?.(website.id);
+      onRemove?.(id);
     } catch (err) {
       const message =
         err instanceof ApiError

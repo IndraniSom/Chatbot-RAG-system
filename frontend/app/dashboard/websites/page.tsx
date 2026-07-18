@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/Feedback";
 import { useAsync } from "@/hooks/useAsync";
 import { websitesApi } from "@/lib/api";
-import type { Website } from "@/types";
+import { getWebsiteId, type Website } from "@/types";
 
 export default function MyWebsitesPage() {
   const { data, loading, error, refetch } = useAsync(
@@ -62,7 +62,7 @@ export default function MyWebsitesPage() {
         ) : (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {websites.map((w) => (
-              <WebsiteCard key={w.id} website={w} />
+              <WebsiteCard key={getWebsiteId(w)} website={w} />
             ))}
           </div>
         )}

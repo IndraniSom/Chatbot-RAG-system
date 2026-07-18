@@ -8,7 +8,7 @@ import { ErrorState, LoadingState } from "@/components/ui/Feedback";
 import { useAsync } from "@/hooks/useAsync";
 import { adminApi } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
-import type { Website } from "@/types";
+import { getWebsiteId, type Website } from "@/types";
 
 export default function AdminOverviewPage() {
   const { user } = useAuth();
@@ -27,7 +27,7 @@ export default function AdminOverviewPage() {
       websitesData
         ? {
             ...websitesData,
-            websites: websitesData.websites.filter((w) => w.id !== id),
+            websites: websitesData.websites.filter((w) => getWebsiteId(w) !== id),
             count: websitesData.count - 1,
           }
         : websitesData
@@ -86,7 +86,7 @@ export default function AdminOverviewPage() {
             <div className="space-y-3">
               {pending.map((w: Website) => (
                 <WebsiteApprovalCard
-                  key={w.id}
+                  key={getWebsiteId(w)}
                   website={w}
                   onRemove={removeFromList}
                 />

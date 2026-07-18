@@ -7,13 +7,14 @@ import {
   WidgetStatusBadge,
 } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import type { Website } from "@/types/website";
+import { getWebsiteId, type Website } from "@/types";
 
 interface WebsiteCardProps {
   website: Website;
 }
 
 export function WebsiteCard({ website }: WebsiteCardProps) {
+  const id = getWebsiteId(website);
   return (
     <Card className="flex h-full flex-col justify-between">
       <div>
@@ -45,13 +46,13 @@ export function WebsiteCard({ website }: WebsiteCardProps) {
 
       <div className="mt-6 flex items-center justify-between">
         <Link
-          href={`/dashboard/websites/${website.id}`}
+          href={`/dashboard/websites/${id}`}
           className="inline-flex items-center gap-1 text-[12.5px] font-medium text-ink-700 hover:text-ink-900"
         >
           View details
           <ArrowUpRight size={13} strokeWidth={2.2} />
         </Link>
-        <Link href={`/dashboard/websites/${website.id}`}>
+        <Link href={`/dashboard/websites/${id}`}>
           <Button size="sm" variant="secondary">
             Manage Website
           </Button>

@@ -57,6 +57,8 @@ const env = {
 
   widget: {
     scriptUrl: getEnv("WIDGET_SCRIPT_URL"),
+    /** Origin the widget should POST chat messages to. */
+    publicApiUrl: getEnv("PUBLIC_API_URL", false),
   },
 };
 

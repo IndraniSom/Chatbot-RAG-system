@@ -29,6 +29,9 @@ class InstallationService {
    * - Widget
    * - Chat API
    * - Qdrant tenant filtering
+   *
+   * The widget reads `data-api-url` to know where to POST chat messages.
+   * Falls back to same-origin in the widget itself if not set.
    */
   generateInstallationScript(
     websiteId: string
@@ -36,9 +39,15 @@ class InstallationService {
     const widgetScriptUrl =
       this.getWidgetScriptUrl();
 
+    const apiUrl = env.widget.publicApiUrl ?? "";
+
+    const apiAttr = apiUrl
+      ? `\n  data-api-url="${apiUrl}"`
+      : "";
+
     return `<script
   src="${widgetScriptUrl}"
-  data-website-id="${websiteId}"
+  data-website-id="${websiteId}"${apiAttr}
 ></script>`;
   }
 
