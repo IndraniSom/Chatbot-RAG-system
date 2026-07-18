@@ -21,7 +21,7 @@ async function bootstrap() {
     console.log("🚀 Starting Scrappy Worker...");
 
     await connectDatabase();
-    await connectRedis();
+    
 
     app.listen(PORT, () => {
       console.log(`✅ Worker listening on port ${PORT}`);

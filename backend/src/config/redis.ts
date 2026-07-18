@@ -28,7 +28,11 @@ redis.on("close", () => {
 });
 
 export async function connectRedis() {
-  if (redis.status === "ready") {
+  if (
+    redis.status === "ready" ||
+    redis.status === "connecting" ||
+    redis.status === "connect"
+  ) {
     return;
   }
 
