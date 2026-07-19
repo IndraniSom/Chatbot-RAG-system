@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 const sections = [
   { id: "top", label: "Overview" },
+  { id: "customize", label: "Customization" },
   { id: "flow", label: "How it works" },
   { id: "frameworks", label: "Framework guides" },
   { id: "verify", label: "Verification" },
@@ -40,7 +41,7 @@ export function StickySidebar() {
       <p className="mb-4 pl-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-500">
         On this page
       </p>
-      <nav className="relative flex flex-col gap-0.5 border-l border-white/[0.08]">
+      <nav className="relative flex flex-col gap-0.5 border-l border-ink-900/10">
         {sections.map((s) => {
           const isActive = active === s.id;
           return (
@@ -49,8 +50,8 @@ export function StickySidebar() {
               href={`#${s.id}`}
               className={`relative -ml-px border-l-2 py-1.5 pl-4 text-[13px] transition-colors ${
                 isActive
-                  ? "border-iris-400 font-medium text-white"
-                  : "border-transparent text-ink-400 hover:text-ink-200"
+                  ? "border-iris-600 font-medium text-ink-900"
+                  : "border-transparent text-ink-500 hover:text-ink-900"
               }`}
             >
               {s.label}

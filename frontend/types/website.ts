@@ -15,6 +15,35 @@ export type IndexingStatus =
 export type UserRole = "USER" | "ADMIN";
 
 /**
+ * User-tunable visual identity for a website's chat widget.
+ *
+ * - `primaryColor` paints the launcher bubble, header bar, and primary
+ *   buttons inside the widget.
+ * - `surfaceColor` paints the chat panel background.
+ * - `logoUrl` / `logoPublicId` come from a Cloudinary upload (the backend
+ *   only stores the URL + public id, never the raw bytes).
+ *
+ * The widget always falls back to a safe robot mark if the logo URL fails
+ * to load — that's handled in `WidgetPreview`, not here.
+ */
+export interface WebsiteAppearance {
+  /** Hex color (e.g. "#3D5AFE"). The widget derives black/white text from this. */
+  primaryColor: string;
+  /** Hex color for the chat panel surface. */
+  surfaceColor: string;
+  /** Cloudinary secure URL for the brand logo. Optional. */
+  logoUrl?: string;
+  /** Cloudinary public_id used to delete/replace the asset later. Optional. */
+  logoPublicId?: string;
+}
+
+/** Sensible defaults used when a website has no saved appearance yet. */
+export const DEFAULT_APPEARANCE: WebsiteAppearance = {
+  primaryColor: "#2563EB",
+  surfaceColor: "#FFFFFF",
+};
+
+/**
  * The backend user model stores `isActive: boolean` (not a status enum).
  * We expose `status: AccountStatus` in the frontend via the `getUserStatus`
  * helper so the UI never has to think about raw booleans.
@@ -61,6 +90,8 @@ export interface Website {
   approvedBy?: string | PopulatedUserRef;
   lastIndexedAt?: string | null;
   lastIndexingError?: string | null;
+  /** Visual identity (colors + logo) for the chat widget. Optional. */
+  appearance?: WebsiteAppearance;
 }
 
 /**

@@ -32,16 +32,16 @@ export function Features() {
       <RevealGroup className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {features.map((f) => (
           <RevealItem key={f.title}>
-            <article className="group relative h-full overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] p-6 transition-colors duration-300 hover:border-iris-500/40 hover:bg-white/[0.04]">
+            <article className="group relative h-full overflow-hidden rounded-[1.35rem] border border-ink-900/10 bg-white/80 p-6 shadow-[0_18px_50px_-34px_rgba(10,10,11,0.45)] transition-all duration-300 hover:-translate-y-1 hover:border-iris-500/30 hover:bg-white">
               {/* hover glow */}
-              <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-iris-500/0 blur-2xl transition-all duration-500 group-hover:bg-iris-500/20" />
-              <div className="relative flex h-11 w-11 items-center justify-center rounded-xl border border-iris-400/20 bg-iris-500/10 text-iris-300 transition-transform duration-300 group-hover:scale-110">
+              <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-iris-500/0 blur-2xl transition-all duration-500 group-hover:bg-iris-500/10" />
+              <div className="relative flex h-11 w-11 items-center justify-center rounded-xl border border-iris-500/15 bg-iris-50 text-iris-700 transition-transform duration-300 group-hover:-rotate-3 group-hover:scale-110">
                 <f.icon size={20} strokeWidth={2} />
               </div>
-              <h3 className="relative mt-5 text-[15.5px] font-semibold text-white">
+              <h3 className="relative mt-5 text-[15.5px] font-semibold text-ink-900">
                 {f.title}
               </h3>
-              <p className="relative mt-2 text-[13.5px] leading-relaxed text-ink-400">
+              <p className="relative mt-2 text-[13.5px] leading-relaxed text-ink-600">
                 {f.body}
               </p>
             </article>

@@ -1,21 +1,30 @@
 "use client";
 
-import { motion, type Variants } from "framer-motion";
-import type { ReactNode } from "react";
+import { motion, type Variants, useReducedMotion } from "framer-motion";
+import { useEffect, useState, type ReactNode } from "react";
 
-/**
- * Scroll-triggered reveal. Animates once when the element enters the viewport.
- * Respects prefers-reduced-motion via Framer's built-in `useReducedMotion`
- * handling when `reduce` is passed by the caller.
- */
-const baseVariants: Variants = {
-  hidden: { opacity: 0, y: 22 },
+function useHydratedReducedMotion(): boolean {
+  const preferred = useReducedMotion() ?? false;
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  return mounted && preferred;
+}
+
+/** Scroll-triggered reveal that becomes a simple fade in reduced-motion mode. */
+const makeVariants = (reduceMotion: boolean): Variants => ({
+  hidden: { opacity: 0, y: reduceMotion ? 0 : 22 },
   visible: (delay: number = 0) => ({
     opacity: 1,
     y: 0,
-    transition: { duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] },
+    transition: {
+      duration: reduceMotion ? 0.01 : 0.6,
+      delay: reduceMotion ? 0 : delay,
+      ease: [0.22, 1, 0.36, 1],
+    },
   }),
-};
+});
 
 export function Reveal({
   children,
@@ -28,11 +37,12 @@ export function Reveal({
   className?: string;
   as?: "div" | "li" | "section" | "span";
 }) {
+  const reduceMotion = useHydratedReducedMotion();
   const MotionTag = motion[as];
   return (
     <MotionTag
       className={className}
-      variants={baseVariants}
+      variants={makeVariants(reduceMotion)}
       custom={delay}
       initial="hidden"
       whileInView="visible"
@@ -53,6 +63,8 @@ export function RevealGroup({
   className?: string;
   stagger?: number;
 }) {
+  const reduceMotion = useHydratedReducedMotion();
+
   return (
     <motion.div
       className={className}
@@ -61,7 +73,9 @@ export function RevealGroup({
       viewport={{ once: true, margin: "-60px" }}
       variants={{
         hidden: {},
-        visible: { transition: { staggerChildren: stagger } },
+        visible: {
+          transition: { staggerChildren: reduceMotion ? 0 : stagger },
+        },
       }}
     >
       {children}
@@ -76,8 +90,10 @@ export function RevealItem({
   children: ReactNode;
   className?: string;
 }) {
+  const reduceMotion = useHydratedReducedMotion();
+
   return (
-    <motion.div className={className} variants={baseVariants}>
+    <motion.div className={className} variants={makeVariants(reduceMotion)}>
       {children}
     </motion.div>
   );

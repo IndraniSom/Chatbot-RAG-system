@@ -16,7 +16,7 @@ export function Accordion({ items }: { items: AccordionItemData[] }) {
   const [open, setOpen] = useState<number | null>(0);
 
   return (
-    <div className="divide-y divide-white/[0.06] overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02]">
+    <div className="divide-y divide-ink-900/10 overflow-hidden rounded-2xl border border-ink-900/10 bg-white/80 shadow-[0_20px_55px_-42px_rgba(10,10,11,0.55)]">
       {items.map((item, i) => {
         const isOpen = open === i;
         return (
@@ -28,7 +28,7 @@ export function Accordion({ items }: { items: AccordionItemData[] }) {
             >
               <span
                 className={`text-[14.5px] font-medium transition-colors ${
-                  isOpen ? "text-white" : "text-ink-200"
+                  isOpen ? "text-ink-900" : "text-ink-700"
                 }`}
               >
                 {item.question}
@@ -38,8 +38,8 @@ export function Accordion({ items }: { items: AccordionItemData[] }) {
                 transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
                 className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-colors ${
                   isOpen
-                    ? "border-iris-400/40 bg-iris-500/15 text-iris-300"
-                    : "border-white/10 text-ink-400"
+                    ? "border-iris-400/40 bg-iris-50 text-iris-700"
+                    : "border-ink-900/10 text-ink-500"
                 }`}
               >
                 <Plus size={15} strokeWidth={2.4} />
@@ -55,7 +55,7 @@ export function Accordion({ items }: { items: AccordionItemData[] }) {
                   transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
                   className="overflow-hidden"
                 >
-                  <div className="px-5 pb-5 pr-12 text-[13.5px] leading-relaxed text-ink-400 sm:px-6">
+                  <div className="px-5 pb-5 pr-12 text-[13.5px] leading-relaxed text-ink-600 sm:px-6">
                     {item.answer}
                   </div>
                 </motion.div>

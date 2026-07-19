@@ -46,16 +46,16 @@ export function Verification() {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true, margin: "-60px" }}
                 transition={{ delay: i * 0.12, duration: 0.5 }}
-                className="flex items-start gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4"
+                className="flex items-start gap-4 rounded-2xl border border-ink-900/10 bg-white/80 p-4 shadow-[0_16px_38px_-32px_rgba(10,10,11,0.5)]"
               >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-iris-400/20 bg-iris-500/10 text-iris-300">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-iris-500/15 bg-iris-50 text-iris-700">
                   <c.icon size={18} strokeWidth={2} />
                 </div>
                 <div>
-                  <p className="text-[14px] font-semibold text-white">
+                  <p className="text-[14px] font-semibold text-ink-900">
                     {c.label}
                   </p>
-                  <p className="mt-0.5 text-[13px] leading-relaxed text-ink-400">
+                  <p className="mt-0.5 text-[13px] leading-relaxed text-ink-600">
                     {c.detail}
                   </p>
                 </div>
@@ -81,10 +81,10 @@ function VerifyIllustration() {
       className="relative"
     >
       <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-iris-600/20 blur-[100px]" />
+        <div className="absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-iris-300/25 blur-[100px]" />
       </div>
 
-      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.05] to-transparent p-8">
+      <div className="relative overflow-hidden rounded-3xl border border-ink-900/10 bg-white/80 p-8 shadow-[0_30px_70px_-48px_rgba(10,10,11,0.65)]">
         {/* animated scan sweep */}
         <motion.div
           aria-hidden
@@ -107,10 +107,10 @@ function VerifyIllustration() {
               <Check size={30} strokeWidth={3} className="text-white" />
             </div>
           </motion.div>
-          <p className="mt-5 text-[15px] font-semibold text-white">
+          <p className="mt-5 text-[15px] font-semibold text-ink-900">
             Installation verified
           </p>
-          <p className="mt-1 text-[13px] text-ink-400">
+          <p className="mt-1 text-[13px] text-ink-600">
             Your Scrappy assistant is now live.
           </p>
 
@@ -124,10 +124,10 @@ function VerifyIllustration() {
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: 1 + i * 0.15, duration: 0.4 }}
-                  className="flex items-center gap-2.5 rounded-lg border border-white/[0.06] bg-black/20 px-3.5 py-2.5 text-left"
+                  className="flex items-center gap-2.5 rounded-lg border border-ink-900/10 bg-[#F8F5EE] px-3.5 py-2.5 text-left"
                 >
                   <Check size={14} strokeWidth={3} className="text-emerald-400" />
-                  <span className="text-[12.5px] text-ink-200">{row}</span>
+                  <span className="text-[12.5px] text-ink-700">{row}</span>
                 </motion.div>
               )
             )}

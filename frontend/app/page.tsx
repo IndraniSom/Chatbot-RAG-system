@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { NavBar } from "@/components/install/NavBar";
 import { Hero } from "@/components/install/Hero";
 import { Features } from "@/components/install/Features";
+import { CustomizationShowcase } from "@/components/install/CustomizationShowcase";
 import { InstallationFlow } from "@/components/install/InstallationFlow";
 import { FrameworkTabs } from "@/components/install/FrameworkTabs";
 import { Verification } from "@/components/install/Verification";
@@ -19,21 +20,19 @@ export const metadata: Metadata = {
 
 export default function InstallPage() {
   return (
-    // Dark-only surface. The root layout paints the body white, so we cover it
-    // with a full-bleed dark canvas scoped to this route.
-    <div className="min-h-screen scroll-smooth bg-[#08080C] text-ink-100 antialiased">
-      {/* faint animated grid texture behind everything */}
+    <div className="min-h-screen scroll-smooth bg-[#F8F5EE] text-ink-900 antialiased">
+      {/* Fine drafting grid fades out below the hero like a sheet of studio paper. */}
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-0 z-0 opacity-[0.5]"
+        className="pointer-events-none fixed inset-0 z-0 opacity-70"
         style={{
           backgroundImage:
-            "linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px)",
+            "linear-gradient(to right, rgba(10,10,11,0.045) 1px, transparent 1px), linear-gradient(to bottom, rgba(10,10,11,0.045) 1px, transparent 1px)",
           backgroundSize: "56px 56px",
           maskImage:
-            "radial-gradient(ellipse 80% 50% at 50% 0%, black 30%, transparent 75%)",
+            "radial-gradient(ellipse 85% 62% at 50% 0%, black 20%, transparent 78%)",
           WebkitMaskImage:
-            "radial-gradient(ellipse 80% 50% at 50% 0%, black 30%, transparent 75%)",
+            "radial-gradient(ellipse 85% 62% at 50% 0%, black 20%, transparent 78%)",
         }}
       />
 
@@ -42,6 +41,7 @@ export default function InstallPage() {
         <main>
           <Hero />
           <Features />
+          <CustomizationShowcase />
 
           {/* Docs body with sticky in-page nav on wide screens */}
           <div className="mx-auto flex max-w-7xl gap-10 px-0 xl:px-6">

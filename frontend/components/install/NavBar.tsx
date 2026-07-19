@@ -6,6 +6,7 @@ import { Menu, X, ArrowUpRight } from "lucide-react";
 
 const navLinks = [
   { label: "Overview", href: "#top" },
+  { label: "Customize", href: "#customize" },
   { label: "Steps", href: "#flow" },
   { label: "Frameworks", href: "#frameworks" },
   { label: "Verify", href: "#verify" },
@@ -28,7 +29,7 @@ function Mark() {
           />
         </svg>
       </span>
-      <span className="text-[15px] font-semibold tracking-tight text-white">
+      <span className="text-[15px] font-semibold tracking-tight text-ink-900">
         Scrappy
         <span className="text-iris-400"> AI</span>
       </span>
@@ -40,7 +41,7 @@ export function NavBar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-[#08080C]/70 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-ink-900/10 bg-[#F8F5EE]/85 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <div className="flex items-center gap-8">
           <Mark />
@@ -49,7 +50,7 @@ export function NavBar() {
               <a
                 key={l.href}
                 href={l.href}
-                className="text-[13.5px] font-medium text-ink-400 transition-colors hover:text-white"
+                className="text-[13.5px] font-medium text-ink-600 transition-colors hover:text-ink-900"
               >
                 {l.label}
               </a>
@@ -60,7 +61,7 @@ export function NavBar() {
         <div className="hidden items-center gap-3 sm:flex">
           <a
             href="/login"
-            className="text-[13.5px] font-medium text-ink-300 transition-colors hover:text-white"
+            className="text-[13.5px] font-medium text-ink-600 transition-colors hover:text-ink-900"
           >
             Sign in
           </a>
@@ -68,7 +69,7 @@ export function NavBar() {
             href="/signup"
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.96 }}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-white px-4 text-[13px] font-semibold text-ink-900 transition-colors hover:bg-ink-100"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-ink-900 px-4 text-[13px] font-semibold text-white shadow-[0_12px_30px_-18px_rgba(10,10,11,0.7)] transition-colors hover:bg-ink-700"
           >
             Open Dashboard
             <ArrowUpRight size={15} strokeWidth={2.4} />
@@ -77,7 +78,7 @@ export function NavBar() {
 
         <button
           onClick={() => setOpen((v) => !v)}
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-ink-200 lg:hidden"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-ink-900/10 bg-white/70 text-ink-800 lg:hidden"
           aria-label="Toggle menu"
         >
           {open ? <X size={18} /> : <Menu size={18} />}
@@ -91,7 +92,7 @@ export function NavBar() {
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            className="overflow-hidden border-t border-white/[0.06] lg:hidden"
+            className="overflow-hidden border-t border-ink-900/10 bg-[#F8F5EE] lg:hidden"
           >
             <nav className="flex flex-col gap-1 px-6 py-4">
               {navLinks.map((l) => (
@@ -99,7 +100,7 @@ export function NavBar() {
                   key={l.href}
                   href={l.href}
                   onClick={() => setOpen(false)}
-                  className="rounded-lg px-3 py-2.5 text-[14px] font-medium text-ink-300 transition-colors hover:bg-white/[0.05] hover:text-white"
+                  className="rounded-lg px-3 py-2.5 text-[14px] font-medium text-ink-700 transition-colors hover:bg-white hover:text-ink-900"
                 >
                   {l.label}
                 </a>

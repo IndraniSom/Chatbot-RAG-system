@@ -39,10 +39,10 @@ export function CodeBlock({
 
   return (
     <div
-      className={`group relative rounded-2xl bg-gradient-to-b from-white/[0.12] to-white/[0.02] p-px shadow-card-dark ${className}`}
+      className={`group relative rounded-2xl bg-gradient-to-b from-ink-900/10 to-ink-900/[0.025] p-px shadow-[0_24px_60px_-42px_rgba(10,10,11,0.6)] ${className}`}
     >
-      <div className="overflow-hidden rounded-[15px] bg-[#0B0B12]/95 backdrop-blur">
-        <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] px-4 py-2.5">
+      <div className="overflow-hidden rounded-[15px] bg-white/95 backdrop-blur">
+        <div className="flex items-center justify-between gap-3 border-b border-ink-900/10 bg-[#F8F5EE]/70 px-4 py-2.5">
           <div className="flex items-center gap-3">
             {chrome && (
               <div className="flex items-center gap-1.5">
@@ -52,7 +52,7 @@ export function CodeBlock({
               </div>
             )}
             {filename && (
-              <span className="font-mono text-[11.5px] text-ink-400">
+              <span className="font-mono text-[11.5px] text-ink-500">
                 {filename}
               </span>
             )}
@@ -61,7 +61,7 @@ export function CodeBlock({
             type="button"
             onClick={onCopy}
             aria-label="Copy code"
-            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[12px] font-medium text-ink-400 transition-colors hover:bg-white/[0.06] hover:text-white"
+            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[12px] font-medium text-ink-500 transition-colors hover:bg-white hover:text-ink-900"
           >
             {copied ? (
               <>
@@ -76,7 +76,7 @@ export function CodeBlock({
             )}
           </button>
         </div>
-        <pre className="overflow-x-auto px-5 py-4 font-mono text-[12.5px] leading-[1.75] text-ink-100">
+        <pre className="overflow-x-auto px-5 py-4 font-mono text-[12.5px] leading-[1.75] text-ink-800">
           <code>{highlight(code, lang)}</code>
         </pre>
       </div>

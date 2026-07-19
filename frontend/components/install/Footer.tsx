@@ -29,8 +29,8 @@ const socials = [
 
 export function Footer() {
   return (
-    <footer className="relative overflow-hidden border-t border-white/[0.06]">
-      <div className="pointer-events-none absolute inset-x-0 bottom-[-8rem] -z-10 mx-auto h-64 max-w-4xl rounded-full bg-iris-700/20 blur-[120px]" />
+    <footer className="relative overflow-hidden border-t border-ink-900/10 bg-white/35">
+      <div className="pointer-events-none absolute inset-x-0 bottom-[-8rem] -z-10 mx-auto h-64 max-w-4xl rounded-full bg-iris-300/20 blur-[120px]" />
       <div className="mx-auto max-w-6xl px-6 py-16">
         <div className="grid grid-cols-2 gap-10 sm:grid-cols-4">
           <div className="col-span-2 sm:col-span-2">
@@ -47,11 +47,11 @@ export function Footer() {
                   />
                 </svg>
               </span>
-              <span className="text-[15px] font-semibold tracking-tight text-white">
+              <span className="text-[15px] font-semibold tracking-tight text-ink-900">
                 Scrappy<span className="text-iris-400"> AI</span>
               </span>
             </div>
-            <p className="mt-4 max-w-xs text-[13.5px] leading-relaxed text-ink-400">
+            <p className="mt-4 max-w-xs text-[13.5px] leading-relaxed text-ink-600">
               An AI-powered chatbot for any website. Install in one line, answer
               customers in seconds.
             </p>
@@ -61,7 +61,7 @@ export function Footer() {
                   key={s.label}
                   href={s.href}
                   aria-label={s.label}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-ink-400 transition-colors hover:border-iris-400/40 hover:text-white"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-ink-900/10 bg-white/70 text-ink-600 transition-colors hover:border-iris-400/50 hover:text-ink-900"
                 >
                   <s.icon size={16} strokeWidth={2} />
                 </a>
@@ -79,7 +79,7 @@ export function Footer() {
                   <li key={l.label}>
                     <a
                       href={l.href}
-                      className="text-[13.5px] text-ink-300 transition-colors hover:text-white"
+                      className="text-[13.5px] text-ink-600 transition-colors hover:text-ink-900"
                     >
                       {l.label}
                     </a>
@@ -90,15 +90,15 @@ export function Footer() {
           ))}
         </div>
 
-        <div className="mt-12 flex flex-col items-start justify-between gap-4 border-t border-white/[0.06] pt-6 sm:flex-row sm:items-center">
+        <div className="mt-12 flex flex-col items-start justify-between gap-4 border-t border-ink-900/10 pt-6 sm:flex-row sm:items-center">
           <p className="text-[12.5px] text-ink-500">
             © 2026 Scrappy AI, Inc. All rights reserved.
           </p>
           <div className="flex items-center gap-5 text-[12.5px] text-ink-500">
-            <a href="#" className="transition-colors hover:text-ink-200">
+            <a href="#" className="transition-colors hover:text-ink-900">
               Privacy
             </a>
-            <a href="#" className="transition-colors hover:text-ink-200">
+            <a href="#" className="transition-colors hover:text-ink-900">
               Terms
             </a>
           </div>

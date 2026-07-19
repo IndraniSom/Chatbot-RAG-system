@@ -21,8 +21,10 @@ import {
 } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { ScriptCodeBlock } from "@/components/dashboard/ScriptCodeBlock";
+import { FrameworkInstallGuide } from "@/components/dashboard/FrameworkInstallGuide";
 import { WebsiteDetailActions } from "@/components/dashboard/WebsiteDetailActions";
 import { IndexStatusPanel } from "@/components/dashboard/IndexStatusPanel";
+import { AppearanceEditor } from "@/components/dashboard/AppearanceEditor";
 import { ErrorState, LoadingState } from "@/components/ui/Feedback";
 import { ApiError, websitesApi } from "@/lib/api";
 import { getWebsiteId, type Website, type WidgetStatus, type IndexingStatus } from "@/types";
@@ -99,7 +101,7 @@ export default function WebsiteDetailPage() {
     return (
       <>
         <Header title="Website" />
-        <div className="mx-auto w-full max-w-4xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-full space-y-6 px-4 py-8 sm:px-6 lg:px-8">
           <ErrorState message={error} onRetry={fetchWebsite} />
         </div>
       </>
@@ -187,7 +189,7 @@ function WebsiteDetailBody({
           ) : null
         }
       />
-      <div className="mx-auto w-full max-w-4xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-full space-y-6 px-4 py-8 sm:px-6 lg:px-8">
         <Link
           href="/dashboard/websites"
           className="inline-flex items-center gap-1 text-[12.5px] font-medium text-ink-500 hover:text-ink-900"
@@ -200,12 +202,7 @@ function WebsiteDetailBody({
         <Card>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex min-w-0 items-start gap-3">
-              <div
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-ink-50 text-ink-700"
-                aria-hidden
-              >
-                <Globe size={18} />
-              </div>
+              <HeroLogo website={website} />
               <div className="min-w-0">
                 <h2 className="truncate text-[18px] font-semibold tracking-tight text-ink-900">
                   {website.name}
@@ -225,7 +222,7 @@ function WebsiteDetailBody({
         {/* Status row */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <StatusTile
-            label="Approval Status"
+            label="Step 1 : Approval Status"
             icon={<CheckCircle2 size={14} />}
             value={<ApprovalStatusBadge status={website.status} />}
             caption={
@@ -237,17 +234,30 @@ function WebsiteDetailBody({
             }
           />
           <StatusTile
-            label="Widget Installation"
+            label="Step 2: Verify the Installation"
             icon={<Globe size={14} />}
-            value={<WidgetStatusBadge status={website.widgetStatus} />}
+            value={
+              <div className="space-y-3">
+                <WidgetStatusBadge status={website.widgetStatus} />
+                {website.status === "APPROVED" && installation && (
+                  <WebsiteDetailActions
+                    websiteId={getWebsiteId(website)}
+                    widgetInstalled={installation.widgetStatus === "INSTALLED"}
+                    onWidgetStatusChange={onWidgetStatusChange}
+                  />
+                )}
+              </div>
+            }
             caption={
               website.widgetStatus === "INSTALLED"
                 ? "Live on your website"
-                : "Paste the script into your site"
+                : website.status === "APPROVED"
+                ? "Install the script below, then verify it here"
+                : "Available after approval"
             }
           />
           <StatusTile
-            label="Knowledge Indexing"
+            label="Step 3: Knowledge Indexing"
             icon={<Clock size={14} />}
             value={
               <IndexStatusPanel
@@ -306,12 +316,11 @@ function WebsiteDetailBody({
               <h3 className="text-[15px] font-semibold text-ink-900">
                 Install Scrappy
               </h3>
-              <p className="text-[13px] text-ink-500">
-                Copy this script and paste it before the closing{" "}
-                <code className="rounded bg-ink-50 px-1.5 py-0.5 text-[12px] text-ink-700">
-                  &lt;/body&gt;
-                </code>{" "}
-                tag of your website.
+              <p className="text-[13px] leading-relaxed text-ink-500">
+                Your generated script tag is shown below. Choose the framework
+                guide that matches your preferred tech stack, follow its
+                placement steps, then use the Verify Installation button in Step
+                2 above.
               </p>
             </div>
             <div className="mt-4">
@@ -325,13 +334,7 @@ function WebsiteDetailBody({
             </div>
 
             {installation && (
-              <div className="mt-5">
-                <WebsiteDetailActions
-                  websiteId={getWebsiteId(website)}
-                  widgetInstalled={installation.widgetStatus === "INSTALLED"}
-                  onWidgetStatusChange={onWidgetStatusChange}
-                />
-              </div>
+              <FrameworkInstallGuide script={installation.script} />
             )}
 
             {website.widgetStatus === "INSTALLED" && (
@@ -348,8 +351,43 @@ function WebsiteDetailBody({
             )}
           </Card>
         )}
+
+        {/* Appearance editor — available for every status. Pre-approval,
+            changes are saved but don't activate until the widget is live. */}
+        <AppearanceEditor
+          website={website}
+          onWebsiteChange={onLocalUpdate}
+        />
       </div>
     </>
+  );
+}
+
+/**
+ * Hero-tile logo / globe fallback. Mirrors the WidgetPreview fallback
+ * behavior: show the brand logo if available, otherwise the generic
+ * globe mark on the ink-50 tile.
+ */
+function HeroLogo({ website }: { website: Website }) {
+  const logoUrl = website.appearance?.logoUrl;
+  const primary = website.appearance?.primaryColor;
+  return (
+    <div
+      className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-ink-50 text-ink-700"
+      aria-hidden
+    >
+      {logoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={logoUrl}
+          alt=""
+          className="h-full w-full object-contain"
+          style={primary ? { background: primary } : undefined}
+        />
+      ) : (
+        <Globe size={18} />
+      )}
+    </div>
   );
 }
 

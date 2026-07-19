@@ -10,10 +10,10 @@ const items: AccordionItemData[] = [
     answer: (
       <>
         Confirm the snippet is placed before the closing{" "}
-        <code className="rounded bg-white/[0.06] px-1.5 py-0.5 font-mono text-[12px] text-iris-300">
+        <code className="rounded bg-iris-50 px-1.5 py-0.5 font-mono text-[12px] text-iris-700">
           &lt;/body&gt;
         </code>{" "}
-        tag and that <code className="font-mono text-iris-300">data-website-id</code>{" "}
+        tag and that <code className="font-mono text-iris-700">data-website-id</code>{" "}
         matches the ID in your dashboard. Hard-refresh the page (Cmd/Ctrl + Shift + R)
         to clear a cached version, and check the browser console for blocked requests.
       </>
@@ -24,10 +24,10 @@ const items: AccordionItemData[] = [
     answer: (
       <>
         CORS errors mean your domain isn&apos;t whitelisted. Add your exact origin
-        (including <code className="font-mono text-iris-300">https://</code>) under
+        (including <code className="font-mono text-iris-700">https://</code>) under
         Website → Settings → Allowed Origins. If you run a strict Content-Security-Policy,
-        allow <code className="font-mono text-iris-300">api.scrappy.ai</code> in{" "}
-        <code className="font-mono text-iris-300">connect-src</code>.
+        allow <code className="font-mono text-iris-700">api.scrappy.ai</code> in{" "}
+        <code className="font-mono text-iris-700">connect-src</code>.
       </>
     ),
   },

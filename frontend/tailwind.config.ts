@@ -10,6 +10,7 @@ const config: Config = {
       fontFamily: {
         sans: ['"Inter Tight"', "system-ui", "sans-serif"],
         serif: ['"Instrument Serif"', "Georgia", "serif"],
+        zilla: ['"Zilla Slab"', "Georgia", "serif"],
         mono: [
           '"JetBrains Mono"',
           "ui-monospace",
@@ -19,7 +20,7 @@ const config: Config = {
         ],
       },
       colors: {
-        // Indigo / purple accent used across the installation docs (dark UI).
+        // Indigo accent used across the light installation studio.
         iris: {
           50: "#EEF0FF",
           100: "#E0E3FF",

@@ -57,7 +57,7 @@ export function AddWebsiteForm() {
         label="Website name"
         type="text"
         name="name"
-        placeholder="Run For Safe Food"
+        placeholder="Portfolio"
         value={name}
         onChange={(e) => setName(e.target.value)}
         leftIcon={<Type size={15} strokeWidth={2} />}
@@ -67,7 +67,7 @@ export function AddWebsiteForm() {
         label="Website URL"
         type="text"
         name="url"
-        placeholder="https://runforsafefood.org"
+        placeholder="https://example.com"
         value={url}
         onChange={(e) => setUrl(e.target.value)}
         leftIcon={<Globe size={15} strokeWidth={2} />}

@@ -15,15 +15,15 @@ type Rule = { re: RegExp; cls: string };
 
 const C = {
   comment: "text-ink-500 italic",
-  string: "text-emerald-300",
-  tag: "text-[#8B8FF8]",
-  attr: "text-[#C7CCFE]",
-  keyword: "text-[#F0A9E4]",
-  fn: "text-[#8B8FF8]",
-  number: "text-amber-300",
-  punct: "text-ink-400",
-  key: "text-[#8B8FF8]",
-  bool: "text-amber-300",
+  string: "text-emerald-700",
+  tag: "text-iris-700",
+  attr: "text-blue-700",
+  keyword: "text-rose-700",
+  fn: "text-iris-700",
+  number: "text-amber-700",
+  punct: "text-ink-500",
+  key: "text-iris-700",
+  bool: "text-amber-700",
 };
 
 const RULES: Record<Lang, Rule[]> = {
