@@ -237,7 +237,7 @@ function WebsiteDetailBody({
             label="Step 2: Verify the Installation"
             icon={<Globe size={14} />}
             value={
-              <div className="space-y-3">
+              <div className="w-full flex justify-between items-center gap-2">
                 <WidgetStatusBadge status={website.widgetStatus} />
                 {website.status === "APPROVED" && installation && (
                   <WebsiteDetailActions
