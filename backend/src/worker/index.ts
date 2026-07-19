@@ -1,20 +1,26 @@
+import express from "express";
 import { connectDatabase } from "../config/database";
 
 import "./queue-events";
 import "./indexing.worker";
 
-/**
- * The worker is a separate Node process. It must establish its own Mongo
- * connection — otherwise the first Mongoose query from a job will fall
- * into Mongoose's "buffering" mode and time out after 10s with
- * `Operation websites.findOne() buffering timed out`.
- */
+const app = express();
+const PORT = process.env.PORT || 10000;
+
+app.get("/", (_, res) => {
+  res.send("Scrappy Worker Running");
+});
+
 async function bootstrap() {
   await connectDatabase();
   console.log("🚀 Workers started...");
+
+  app.listen(PORT, () => {
+    console.log(`✅ Worker listening on ${PORT}`);
+  });
 }
 
 bootstrap().catch((err) => {
-  console.error("❌ Worker bootstrap failed:", err);
+  console.error(err);
   process.exit(1);
 });
