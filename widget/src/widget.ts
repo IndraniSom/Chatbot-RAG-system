@@ -337,7 +337,7 @@
     transition: transform 220ms ease, opacity 220ms ease;
   }
   .scrappy-launcher .glyph svg { width: 100%; height: 100%; display: block; }
-  .scrappy-launcher[aria-expanded="true"] .glyph { transform: rotate(90deg); }
+  .scrappy-launcher[aria-expanded="true"] 
 
   .scrappy-invite {
     position: fixed;
