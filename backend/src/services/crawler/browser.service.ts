@@ -19,7 +19,7 @@ class BrowserService {
     waitUntil: "domcontentloaded",
     timeout: 30000,
 });
-
+await page.waitForTimeout(5000);
       const html = await page.content();
       const title = await page.title();
       const finalUrl = page.url();

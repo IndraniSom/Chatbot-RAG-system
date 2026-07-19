@@ -301,7 +301,17 @@ npm run worker
 | Vector Database | Qdrant Cloud |
 
 ---
+# 🎥 Demo
 
+<p align="center">
+  <a href="https://youtu.be/vtaA-cmKJME" target="_blank">
+    <img src="./docs/demo-thumbnail.png" alt="Scrappy AI Demo" width="800">
+  </a>
+</p>
+
+<p align="center">
+  <b>▶️ Click the image above to watch the full demo</b>
+</p>
 # 🌟 Highlights
 
 - Production-ready AI chatbot SaaS

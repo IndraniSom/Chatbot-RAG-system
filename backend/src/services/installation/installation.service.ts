@@ -166,7 +166,7 @@ class InstallationService {
     timeout: 30000,
 });
 
-await page.waitForTimeout(3000);
+await page.waitForTimeout(5000);
 
 await page.waitForSelector(
     `script[data-website-id="${website.websiteId}"]`,
