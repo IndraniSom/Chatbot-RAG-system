@@ -162,18 +162,18 @@ class InstallationService {
        * Open the approved website.
        */
       await page.goto(website.url, {
-  waitUntil: "networkidle",
-  timeout: 30000,
+    waitUntil: "domcontentloaded",
+    timeout: 30000,
 });
 
-await page.waitForLoadState("networkidle");
+await page.waitForTimeout(3000);
 
 await page.waitForSelector(
-  `script[data-website-id="${website.websiteId}"]`,
-  {
-    state: "attached",
-    timeout: 10000,
-  }
+    `script[data-website-id="${website.websiteId}"]`,
+    {
+        state: "attached",
+        timeout: 10000,
+    }
 );
 
       /**

@@ -16,9 +16,9 @@ class BrowserService {
 
     try {
       await page.goto(url, {
-        waitUntil: "networkidle",
-        timeout: 30000,
-      });
+    waitUntil: "domcontentloaded",
+    timeout: 30000,
+});
 
       const html = await page.content();
       const title = await page.title();
