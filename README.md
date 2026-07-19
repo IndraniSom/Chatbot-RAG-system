@@ -312,6 +312,7 @@ npm run worker
 <p align="center">
   <b>▶️ Click the image above to watch the full demo</b>
 </p>
+
 # 🌟 Highlights
 
 - Production-ready AI chatbot SaaS
