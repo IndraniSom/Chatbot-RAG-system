@@ -1,14 +1,14 @@
 {
   "name": "widget",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  
+  "description": "Scrappy embeddable chat widget (Shadow DOM, IIFE, no framework)",
+  "main": "dist/widget.js",
   "scripts": {
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build && node scripts/sync-artifact.js",
+    "build:widget": "vite build",
+    "sync": "node scripts/sync-artifact.js"
   },
-
   "keywords": [],
   "author": "",
   "license": "ISC",

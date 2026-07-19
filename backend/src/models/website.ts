@@ -20,6 +20,25 @@ export type IndexingStatus =
   | "INDEXED"
   | "FAILED";
 
+/**
+ * Per-website branding sent to the widget.
+ *
+ * `primaryColor` and `surfaceColor` are required (with sensible defaults
+ * applied at the schema level so legacy documents pick them up
+ * automatically — see the `default` block below).
+ *
+ * `logoUrl` / `logoPublicId` are optional. The URL is the Cloudinary
+ * secure_url returned by the completion endpoint, and `logoPublicId`
+ * is stored solely so the server can issue a destroy() call when the
+ * customer removes (or replaces) the logo.
+ */
+export interface IWebsiteAppearance {
+  primaryColor: string;
+  surfaceColor: string;
+  logoUrl?: string;
+  logoPublicId?: string;
+}
+
 export interface IWebsite
   extends Document {
   websiteId: string;
@@ -58,7 +77,24 @@ export interface IWebsite
 
   updatedAt: Date;
   lastIndexingError?: string;
+
+  appearance: IWebsiteAppearance;
 }
+
+/**
+ * Default brand colors used when:
+ *
+ *  - A customer hasn't customized the widget yet.
+ *  - Older documents (predating this field) are read into the API
+ *    surface — Mongoose applies subdocument `default` factories for us.
+ */
+export const DEFAULT_APPEARANCE = {
+  primaryColor: "#2563EB",
+  surfaceColor: "#FFFFFF",
+} as const satisfies Pick<
+  IWebsiteAppearance,
+  "primaryColor" | "surfaceColor"
+>;
 
 const websiteSchema =
   new Schema<IWebsite>(
@@ -208,9 +244,50 @@ const websiteSchema =
         type: Date,
       },
       lastIndexingError: {
-  type: String,
-  trim: true,
-},
+        type: String,
+        trim: true,
+      },
+
+      /**
+       * Widget appearance (brand colors + optional logo).
+       *
+       * `default` ensures every persisted document has the structure the
+       * widget expects — including legacy docs created before this field
+       * existed (Mongoose applies the default on read queries that include
+       * the path, and on save).
+       */
+      appearance: {
+        type: {
+          primaryColor: {
+            type: String,
+            required: true,
+            default:
+              DEFAULT_APPEARANCE.primaryColor,
+          },
+          surfaceColor: {
+            type: String,
+            required: true,
+            default:
+              DEFAULT_APPEARANCE.surfaceColor,
+          },
+          logoUrl: {
+            type: String,
+            trim: true,
+          },
+          logoPublicId: {
+            type: String,
+            trim: true,
+          },
+        },
+        required: true,
+        default: () => ({
+          primaryColor:
+            DEFAULT_APPEARANCE.primaryColor,
+          surfaceColor:
+            DEFAULT_APPEARANCE.surfaceColor,
+        }),
+        _id: false,
+      },
     },
     {
       timestamps: true,

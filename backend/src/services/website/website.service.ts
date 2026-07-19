@@ -23,7 +23,7 @@ class WebsiteService {
    * runforsafefood.org
    *
    * Output:
-   * https://runforsafefood.org/
+   * https://example.com/
    */
   private normalizeUrl(inputUrl: string): URL {
     let url = inputUrl.trim();

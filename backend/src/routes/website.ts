@@ -3,6 +3,7 @@ import {
 } from "express";
 
 import websiteController from "../controllers/website.controller";
+import appearanceController from "../controllers/appearance.controller";
 
 import {
   authenticateUser,
@@ -126,4 +127,67 @@ router.delete(
   authenticateUser,
   websiteController.cancelIndexJob
 );
+
+/**
+ * PATCH /api/websites/:id/appearance
+ *
+ * Update the widget's brand colors and optionally clear its logo.
+ */
+router.patch(
+  "/:id/appearance",
+  (req, res) =>
+    appearanceController
+      .updateAppearance(
+        req,
+        res
+      )
+);
+
+/**
+ * POST /api/websites/:id/logo/signature
+ *
+ * Mints a short-lived, scoped signature for browser-direct uploads
+ * to Cloudinary.
+ */
+router.post(
+  "/:id/logo/signature",
+  (req, res) =>
+    appearanceController
+      .createLogoSignature(
+        req,
+        res
+      )
+);
+
+/**
+ * POST /api/websites/:id/logo/complete
+ *
+ * Body: `{ publicId, timestamp, signature }`. Verifies and persists a
+ * freshly uploaded logo.
+ */
+router.post(
+  "/:id/logo/complete",
+  (req, res) =>
+    appearanceController
+      .completeLogoUpload(
+        req,
+        res
+      )
+);
+
+/**
+ * DELETE /api/websites/:id/logo
+ *
+ * Remove the widget logo.
+ */
+router.delete(
+  "/:id/logo",
+  (req, res) =>
+    appearanceController
+      .removeLogo(
+        req,
+        res
+      )
+);
+
 export default router;

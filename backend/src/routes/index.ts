@@ -13,6 +13,7 @@ import ragRoutes from "./rag";
 import authRoutes from "./auth";
 import websiteRoutes from "./website";
 import adminRoutes from "./admin";
+import widgetConfigRoutes from "./widget-config";
 const router = Router();
 
 router.use("/chat", chatRoutes);
@@ -28,4 +29,10 @@ router.use("/test-rag", ragRoutes);
 router.use("/auth", authRoutes);
 router.use("/websites", websiteRoutes);
 router.use("/admin", adminRoutes);
+/**
+ * Public widget config endpoint — loaded by the chat widget embedded
+ * on customer sites. Must NOT be mounted under `/auth` or behind any
+ * JWT middleware.
+ */
+router.use("/widget-config", widgetConfigRoutes);
 export default router;

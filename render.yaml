@@ -71,6 +71,18 @@ services:
       - key: PUBLIC_API_URL
         value: https://scrappy-backend.onrender.com
 
+      # Cloudinary — used by the brand-customization logo upload flow.
+      # Set the three values in the Render dashboard. The API secret
+      # stays server-side and is never exposed to clients.
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: CLOUDINARY_FOLDER
+        value: scrappy-widget-logos
+
   # ──────────────────────────────────────────────────────────────────
   # 2. Background Worker — BullMQ consumer that runs indexing jobs
   # ──────────────────────────────────────────────────────────────────

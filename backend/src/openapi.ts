@@ -73,6 +73,11 @@ export const openapiSpec = {
       description:
         "Internal endpoints for Scrappy staff. Requires an authenticated user whose role is `ADMIN`.",
     },
+    {
+      name: "Widget",
+      description:
+        "Endpoints called by the chat widget embedded on customer sites. The widget configuration endpoint is public (no auth) and intentionally returns only the brand colors and logo URL.",
+    },
   ],
   paths: {
     "/health": {
@@ -236,10 +241,10 @@ export const openapiSpec = {
               schema: { $ref: "#/components/schemas/CreateWebsiteRequest" },
               examples: {
                 example: {
-                  summary: "Submit Run For Safe Food",
+                  summary: "Submit Portfolio",
                   value: {
-                    name: "Run For Safe Food",
-                    url: "https://runforsafefood.org",
+                    name: "Portfolio",
+                    url: "https://example.com",
                   },
                 },
               },
@@ -558,6 +563,269 @@ export const openapiSpec = {
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/MessageErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+
+    // ─────────────────────────────────────────────────────────────────
+    // Appearance — owner-facing brand customization
+    // ─────────────────────────────────────────────────────────────────
+    "/websites/{id}/appearance": {
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          description: "Mongo ObjectId of the website.",
+          schema: { type: "string" },
+        },
+      ],
+      patch: {
+        tags: ["Websites"],
+        summary: "Update the widget appearance",
+        description:
+          "Strictly updates the widget's brand colors and (optionally) clears its logo. Only the keys `primaryColor`, `surfaceColor`, and `removeLogo` are accepted; anything else returns 400. Colors must be hex strings (`#RGB`, `#RRGGBB`, or `#RRGGBBAA`).",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/UpdateAppearanceRequest",
+              },
+              examples: {
+                colors: {
+                  summary: "Change colors only",
+                  value: {
+                    primaryColor: "#1d4ed8",
+                    surfaceColor: "#fef3c7",
+                  },
+                },
+                removeLogo: {
+                  summary: "Clear the logo",
+                  value: { removeLogo: true },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Appearance updated",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/AppearanceResponse",
+                },
+              },
+            },
+          },
+          "400": {
+            description:
+              "Validation error (unknown field, bad hex, wrong type)",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/MessageErrorResponse",
+                },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/Unauthorized" },
+          "404": { $ref: "#/components/responses/NotFound" },
+        },
+      },
+    },
+    "/websites/{id}/logo/signature": {
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          description: "Mongo ObjectId of the website.",
+          schema: { type: "string" },
+        },
+      ],
+      post: {
+        tags: ["Websites"],
+        summary: "Sign a Cloudinary direct-upload request",
+        description:
+          "Returns a short-lived signature scoped to this customer's public website id. The signature is HMAC-SHA1 of `folder`, `public_id`, and `timestamp` over the server-side API secret. The endpoint returns 503 if Cloudinary is not configured.",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": {
+            description: "Signed upload parameters",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/SignedUploadParamsResponse",
+                },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/Unauthorized" },
+          "404": { $ref: "#/components/responses/NotFound" },
+          "503": {
+            description:
+              "Cloudinary is not configured on this server",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/MessageErrorResponse",
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/websites/{id}/logo/complete": {
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          description: "Mongo ObjectId of the website.",
+          schema: { type: "string" },
+        },
+      ],
+      post: {
+        tags: ["Websites"],
+        summary: "Confirm a Cloudinary logo upload",
+        description:
+          "The dashboard only sends back the `publicId` returned by Cloudinary; the server re-fetches the asset, validates format/size/dimensions, and persists the optimized secure URL. Client-supplied URLs and metadata are ignored. Previously-stored logos are destroyed only after the new DB row is saved.",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/CompleteLogoUploadRequest",
+              },
+              examples: {
+                publicId: {
+                  summary: "After a direct upload",
+                  value: {
+                    publicId:
+                      "ws_51322baf429e0ff0_a83b1e2f4c5d6e78",
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Logo saved",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/AppearanceResponse",
+                },
+              },
+            },
+          },
+          "400": {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/MessageErrorResponse",
+                },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/Unauthorized" },
+          "404": { $ref: "#/components/responses/NotFound" },
+          "422": {
+            description:
+              "Logo rejected (unsupported format, larger than 2 MB, or odd dimensions)",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/MessageErrorResponse",
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/websites/{id}/logo": {
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          description: "Mongo ObjectId of the website.",
+          schema: { type: "string" },
+        },
+      ],
+      delete: {
+        tags: ["Websites"],
+        summary: "Remove the widget logo",
+        description:
+          "Clears the stored logo URL and (best-effort) destroys the Cloudinary asset. Convenience wrapper around the appearance update with `removeLogo: true`.",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": {
+            description: "Logo removed",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/AppearanceResponse",
+                },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/Unauthorized" },
+          "404": { $ref: "#/components/responses/NotFound" },
+        },
+      },
+    },
+
+    // ─────────────────────────────────────────────────────────────────
+    // Public widget configuration
+    // ─────────────────────────────────────────────────────────────────
+    "/widget-config/{websiteId}": {
+      parameters: [
+        {
+          name: "websiteId",
+          in: "path",
+          required: true,
+          description:
+            "Public Scrappy website id (e.g. `ws_51322baf429e0ff0`).",
+          schema: { type: "string" },
+        },
+      ],
+      get: {
+        tags: ["Widget"],
+        summary:
+          "Public widget brand configuration",
+        description:
+          "Returns the brand colors and logo URL the chat widget needs to render. No auth required — this is the endpoint the embedded widget calls. Only available for websites that are `APPROVED` and `isActive`.",
+        responses: {
+          "200": {
+            description: "Widget configuration",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/PublicWidgetConfigResponse",
+                },
+              },
+            },
+          },
+          "404": {
+            description:
+              "Website not found, not approved, or not active",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/MessageErrorResponse",
+                },
               },
             },
           },
@@ -2157,13 +2425,13 @@ export const openapiSpec = {
         type: "object",
         required: ["name", "url"],
         properties: {
-          name: { type: "string", minLength: 1, example: "Run For Safe Food" },
+          name: { type: "string", minLength: 1, example: "Portfolio" },
           url: {
             type: "string",
             format: "uri",
             description:
               "HTTP(S) URL. If the protocol is missing, https:// is assumed.",
-            example: "https://runforsafefood.org",
+            example: "https://example.com",
           },
         },
       },
@@ -2227,6 +2495,9 @@ export const openapiSpec = {
           lastIndexingError: { type: "string", nullable: true },
           approvedAt: { type: "string", format: "date-time" },
           createdAt: { type: "string", format: "date-time" },
+          appearance: {
+            $ref: "#/components/schemas/WebsiteAppearance",
+          },
         },
       },
       WebsiteResponse: {
@@ -2267,7 +2538,7 @@ export const openapiSpec = {
         ],
         properties: {
           websiteId: { type: "string", example: "ws_51322baf429e0ff0" },
-          websiteName: { type: "string", example: "Run For Safe Food" },
+          websiteName: { type: "string", example: "Portfolio" },
           url: { type: "string", format: "uri" },
           domain: { type: "string", example: "runforsafefood.org" },
           widgetStatus: {
@@ -2420,6 +2691,192 @@ export const openapiSpec = {
             minLength: 1,
             description: "Shown to the customer on their dashboard.",
             example: "Domain does not resolve. Please verify the URL.",
+          },
+        },
+      },
+
+      // ─────────────────────────────────────────────────────────────
+      // Appearance — owner brand customization
+      // ─────────────────────────────────────────────────────────────
+      WebsiteAppearance: {
+        type: "object",
+        required: ["primaryColor", "surfaceColor"],
+        properties: {
+          primaryColor: {
+            type: "string",
+            description:
+              "Brand primary color, normalized to `#RRGGBB`.",
+            example: "#2563eb",
+          },
+          surfaceColor: {
+            type: "string",
+            description:
+              "Widget surface (background) color, normalized to `#RRGGBB`.",
+            example: "#ffffff",
+          },
+          logoUrl: {
+            type: "string",
+            format: "uri",
+            nullable: true,
+            description:
+              "Cloudinary secure URL for the customer's logo. Null when none is uploaded.",
+            example:
+              "https://res.cloudinary.com/demo/image/upload/v1234/scrappy/websites/ws_51322baf429e0ff0_a83b1e2f4c5d6e78.png",
+          },
+        },
+      },
+      AppearanceResponse: {
+        type: "object",
+        required: ["success", "message", "data"],
+        properties: {
+          success: { type: "boolean", example: true },
+          message: { type: "string" },
+          data: {
+            type: "object",
+            required: ["appearance"],
+            properties: {
+              appearance: {
+                $ref: "#/components/schemas/WebsiteAppearance",
+              },
+            },
+          },
+        },
+      },
+      UpdateAppearanceRequest: {
+        type: "object",
+        description:
+          "Any subset of `primaryColor`, `surfaceColor`, or `removeLogo`. Unknown keys are rejected.",
+        properties: {
+          primaryColor: {
+            type: "string",
+            description:
+              "Six-digit hex color (`#RRGGBB`).",
+            example: "#1d4ed8",
+          },
+          surfaceColor: {
+            type: "string",
+            description:
+              "Six-digit hex color (`#RRGGBB`).",
+            example: "#fef3c7",
+          },
+          removeLogo: {
+            type: "boolean",
+            description:
+              "Set to `true` to clear the stored logo and best-effort delete the underlying asset.",
+            example: false,
+          },
+        },
+      },
+      SignedUploadParams: {
+        type: "object",
+        required: [
+          "cloudName",
+          "apiKey",
+          "timestamp",
+          "signature",
+          "folder",
+          "publicId",
+        ],
+        properties: {
+          cloudName: { type: "string" },
+          apiKey: { type: "string" },
+          timestamp: { type: "integer" },
+          signature: {
+            type: "string",
+            description:
+              "HMAC-SHA1 signature minted server-side. Short-lived; scoped to this website.",
+          },
+          folder: {
+            type: "string",
+            description:
+              "Cloudinary upload folder scoped below the configured root and public website ID.",
+            example:
+              "scrappy-widget-logos/ws_51322baf429e0ff0",
+          },
+          publicId: {
+            type: "string",
+            description:
+              "Unqualified Cloudinary public_id for this upload (includes the website ID and a random suffix).",
+            example:
+              "ws_51322baf429e0ff0_a83b1e2f4c5d6e78",
+          },
+        },
+      },
+      SignedUploadParamsResponse: {
+        type: "object",
+        required: ["success", "data"],
+        properties: {
+          success: { type: "boolean", example: true },
+          data: {
+            type: "object",
+            required: ["params"],
+            properties: {
+              params: {
+                $ref: "#/components/schemas/SignedUploadParams",
+              },
+            },
+          },
+        },
+      },
+      CompleteLogoUploadRequest: {
+        type: "object",
+        required: ["publicId", "timestamp", "signature"],
+        properties: {
+          publicId: {
+            type: "string",
+            description:
+              "Unqualified public ID returned by the signature endpoint. The server derives the owned folder and queries Cloudinary for authoritative metadata.",
+            example:
+              "ws_51322baf429e0ff0_a83b1e2f4c5d6e78",
+          },
+          timestamp: {
+            type: "integer",
+            description: "Timestamp returned by the signature endpoint.",
+          },
+          signature: {
+            type: "string",
+            description: "Signature returned by the signature endpoint; verified before completion.",
+          },
+        },
+      },
+      PublicWidgetConfig: {
+        type: "object",
+        required: [
+          "websiteId",
+          "primaryColor",
+          "surfaceColor",
+        ],
+        properties: {
+          websiteId: {
+            type: "string",
+            example: "ws_51322baf429e0ff0",
+          },
+          primaryColor: { type: "string", example: "#2563eb" },
+          surfaceColor: { type: "string", example: "#ffffff" },
+          logoUrl: {
+            type: "string",
+            format: "uri",
+            nullable: true,
+            description:
+              "Optimized Cloudinary URL for the customer's logo; absent when no logo has been uploaded.",
+            example:
+              "https://res.cloudinary.com/demo/image/upload/v1234/scrappy/websites/ws_51322baf429e0ff0_a83b1e2f4c5d6e78.png",
+          },
+        },
+      },
+      PublicWidgetConfigResponse: {
+        type: "object",
+        required: ["success", "data"],
+        properties: {
+          success: { type: "boolean", example: true },
+          data: {
+            type: "object",
+            required: ["widgetConfig"],
+            properties: {
+              widgetConfig: {
+                $ref: "#/components/schemas/PublicWidgetConfig",
+              },
+            },
           },
         },
       },

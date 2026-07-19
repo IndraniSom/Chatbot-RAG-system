@@ -60,6 +60,37 @@ const env = {
     /** Origin the widget should POST chat messages to. */
     publicApiUrl: getEnv("PUBLIC_API_URL", false),
   },
+
+  /**
+   * Cloudinary — used by the brand-customization flow for direct
+   * browser uploads of customer logos.
+   *
+   * Cloudinary configuration is *optional* at startup. When all three
+   * vars are present, color-customization customers can also upload a
+   * logo; otherwise only color customization is available and the
+   * upload endpoints respond with 503.
+   *
+   * We pull live values via `process.env.*` at first use (see
+   * `config/cloudinary.ts`) so we don't freeze a single env snapshot
+   * here — but exposing them through the typed `env` object lets the
+   * OpenAPI / Scalar docs reference the same keys.
+   */
+  cloudinary: {
+    cloudName: getEnv("CLOUDINARY_CLOUD_NAME", false),
+    apiKey: getEnv("CLOUDINARY_API_KEY", false),
+    /**
+     * The API secret is configured server-side and is never exposed
+     * to clients. We surface its *presence* (so diagnostic code can
+     * tell at a glance whether uploads are enabled) but never its
+     * value.
+     */
+    hasApiSecret:
+      !!(
+        process.env.CLOUDINARY_API_SECRET?.trim() ?? ""
+      ),
+    folder:
+      getEnv("CLOUDINARY_FOLDER", false) || "scrappy-widget-logos",
+  },
 };
 
 export default env;
