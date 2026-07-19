@@ -212,24 +212,23 @@
   /*  no external assets, no copyright concerns.      */
   /* -------------------------------------------------- */
 
+  /**
+   * Lucide-style bot icon. Stroke-based and inline so the widget bundle
+   * has no external icon dependency. We deliberately don't animate it
+   * when the chat opens so the launcher stays visually stable.
+   */
   const ROBOT_SVG = `
-<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"
+<svg viewBox="0 0 24 24" width="24" height="24"
+     xmlns="http://www.w3.org/2000/svg" fill="none"
+     stroke="currentColor" stroke-width="2"
+     stroke-linecap="round" stroke-linejoin="round"
      aria-hidden="true" focusable="false">
-  <defs>
-    <linearGradient id="srg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.18"/>
-      <stop offset="100%" stop-color="#000000" stop-opacity="0.08"/>
-    </linearGradient>
-  </defs>
-  <rect x="5" y="9" width="22" height="16" rx="5" fill="currentColor" fill-opacity="0.16"/>
-  <rect x="5" y="9" width="22" height="16" rx="5" fill="url(#srg)"/>
-  <circle cx="12" cy="17" r="2.1" fill="currentColor"/>
-  <circle cx="20" cy="17" r="2.1" fill="currentColor"/>
-  <rect x="9.5" y="22" width="13" height="1.6" rx="0.8" fill="currentColor" fill-opacity="0.55"/>
-  <rect x="13.5" y="5" width="5" height="5" rx="1.4" fill="currentColor"/>
-  <circle cx="16" cy="7.4" r="0.9" fill="currentColor" fill-opacity="0.45"/>
-  <rect x="3" y="17" width="2.5" height="5" rx="1.2" fill="currentColor" fill-opacity="0.55"/>
-  <rect x="26.5" y="17" width="2.5" height="5" rx="1.2" fill="currentColor" fill-opacity="0.55"/>
+  <path d="M12 8V4H8"/>
+  <rect width="16" height="12" x="4" y="8" rx="2"/>
+  <path d="M2 14h2"/>
+  <path d="M20 14h2"/>
+  <path d="M15 13v2"/>
+  <path d="M9 13v2"/>
 </svg>`.trim();
 
   /* -------------------------------------------------- */
@@ -337,7 +336,6 @@
     transition: transform 220ms ease, opacity 220ms ease;
   }
   .scrappy-launcher .glyph svg { width: 100%; height: 100%; display: block; }
-  .scrappy-launcher[aria-expanded="true"]  { transform: rotate(90deg); }
 
   .scrappy-invite {
     position: fixed;
